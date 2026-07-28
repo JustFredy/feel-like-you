@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentirte Como Tú</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0d0f12;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .chapter {
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #e2e8f0;
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+    .text-container {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      min-height: 120px;
+      margin-bottom: 30px;
+      color: #cbd5e1;
+    }
+    .btn {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(225, 29, 72, 0.4);
+      transition: transform 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="chapter">Inicio de la aventura</div>
+    <div class="text-container" id="typewriter"></div>
+    <button class="btn" onclick="mostrarPista()">Descubrir primera pista</button>
+  </div>
+
+  <script>
+    const mensaje = "Hay historias que no se cuentan con palabras, sino con momentos... ¿Lista para comenzar?";
+    let index = 0;
+    const speed = 45;
+
+    function escribirTexto() {
+      if (index < mensaje.length) {
+        document.getElementById("typewriter").innerHTML += mensaje.charAt(index);
+        index++;
+        setTimeout(escribirTexto, speed);
+      }
+    }
+
+    function mostrarPista() {
+      alert("Pista 1: Ve hacia donde normalmente empieza tu rutina de las mañanas...");
+    }
+
+    window.onload = escribirTexto;
+  </script>
+
+</body>
+</html>
