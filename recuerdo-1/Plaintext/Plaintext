@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuerdo 1 - Sentirte Como Tú</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0d0f12;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .chapter {
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #e2e8f0;
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+    .text-container {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      margin-bottom: 24px;
+      color: #cbd5e1;
+    }
+    .photo-placeholder {
+      width: 100%;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .btn {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(225, 29, 72, 0.4);
+      transition: transform 0.2s;
+      width: 100%;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .pista-box {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(225, 29, 72, 0.1);
+      border: 1px solid rgba(225, 29, 72, 0.3);
+      border-radius: 12px;
+      color: #fda4af;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="chapter">Capítulo 1 de 5</div>
+    
+    <div class="text-container" id="typewriter"></div>
+
+    <!-- Espacio para fotografía (opcional) -->
+    <div class="photo-placeholder">
+      📷 Espacio para foto del recuerdo
+    </div>
+
+    <button class="btn" id="btnPista" onclick="revelarPista()">Revelar siguiente pista</button>
+
+    <div class="pista-box" id="pistaBox">
+      📍 <strong>Pista 2:</strong> Busca donde guardamos las tazas del café por la mañana...
+    </div>
+  </div>
+
+  <script>
+    const mensaje = "El primer momento que guardé fue aquél en el que nos dimos cuenta de que esto no era coincidencia...";
+    let index = 0;
+    const speed = 40;
+
+    function escribirTexto() {
+      if (index < mensaje.length) {
+        document.getElementById("typewriter").innerHTML += mensaje.charAt(index);
+        index++;
+        setTimeout(escribirTexto, speed);
+      }
+    }
+
+    function revelarPista() {
+      document.getElementById("pistaBox").style.display = "block";
+      document.getElementById("btnPista").style.display = "none";
+    }
+
+    window.onload = escribirTexto;
+  </script>
+
+</body>
+</html>
