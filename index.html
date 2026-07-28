@@ -15,6 +15,7 @@
       --card-text: #0a0a0a;
       --card-muted: #666666;
       --border: #e0e0e0;
+      --error: #c0392b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,7 +34,6 @@
       position: relative;
     }
 
-    /* Canvas de ondas cebra */
     canvas#zebraCanvas {
       position: fixed;
       inset: 0;
@@ -42,11 +42,10 @@
       z-index: 0;
     }
 
-    /* Tarjeta principal */
     .card {
       background: var(--card-bg);
       border-radius: 3px;
-      padding: 48px 40px 40px;
+      padding: 44px 40px 36px;
       max-width: 400px;
       width: 100%;
       box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
@@ -67,7 +66,6 @@
       transition: transform 0.18s ease-out;
     }
 
-    /* Capítulo */
     .chapter {
       font-family: 'Space Grotesk', sans-serif;
       font-size: 0.65rem;
@@ -86,7 +84,6 @@
       transform: translateY(0);
     }
 
-    /* Texto narrativo */
     .narrative {
       font-family: 'Playfair Display', serif;
       font-size: 1.15rem;
@@ -94,6 +91,7 @@
       color: #333;
       min-height: 50px;
       margin-bottom: 28px;
+      cursor: default;
     }
 
     .cursor {
@@ -111,7 +109,6 @@
       51%, 100% { opacity: 0; }
     }
 
-    /* Separador minimalista */
     .divider {
       width: 24px;
       height: 1px;
@@ -123,7 +120,6 @@
 
     .divider.visible { opacity: 1; }
 
-    /* Chat */
     .chat {
       display: flex;
       flex-direction: column;
@@ -177,10 +173,8 @@
       align-self: flex-end;
       border-bottom-right-radius: 4px;
       margin-right: 4px;
-      font-weight: 400;
     }
 
-    /* Sticker dentro del bubble */
     .sticker-wrap {
       display: flex;
       align-items: center;
@@ -205,16 +199,11 @@
       60% { transform: scale(1); }
     }
 
-    /* Indicador de escritura */
     .typing-indicator {
       display: flex;
       gap: 4px;
       padding: 10px 16px;
-      align-self: flex-end;
-      margin-right: 4px;
-      background: #f5f5f5;
       border-radius: 14px;
-      border-bottom-right-radius: 4px;
       opacity: 0;
       transform: translateY(8px) scale(0.96);
       transition: opacity 0.3s ease, transform 0.3s ease;
@@ -228,7 +217,6 @@
     .typing-indicator span {
       width: 5px;
       height: 5px;
-      background: #aaa;
       border-radius: 50%;
       animation: typingDot 1.4s ease-in-out infinite;
     }
@@ -241,7 +229,15 @@
       30% { opacity: 1; transform: translateY(-3px); }
     }
 
-    /* Reflexión */
+    .typing-left {
+      align-self: flex-start;
+      margin-left: 4px;
+      background: #1a1a1a;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing-left span { background: #666; }
+
     .reflection {
       font-family: 'Playfair Display', serif;
       font-style: italic;
@@ -259,7 +255,6 @@
       transform: translateY(0);
     }
 
-    /* Botón */
     .btn {
       background: var(--card-text);
       color: var(--card-bg);
@@ -289,16 +284,238 @@
       letter-spacing: 2px;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-    }
+    .btn:active { transform: scale(0.97); }
 
     .btn:focus-visible {
       outline: 2px solid var(--card-muted);
       outline-offset: 3px;
     }
 
-    /* Overlay */
+    .progress {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.12);
+      transition: all 0.5s ease;
+    }
+
+    .progress-dot.active {
+      background: var(--card-muted);
+      transform: scale(1.3);
+    }
+
+    /* ========================================
+       Sección de código
+       ======================================== */
+    .code-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.6s ease, max-height 0.6s ease;
+    }
+
+    .code-section.active {
+      opacity: 1;
+      max-height: 500px;
+    }
+
+    .code-icon {
+      width: 48px;
+      height: 48px;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--card-muted);
+      font-size: 1rem;
+      transition: all 0.5s ease;
+    }
+
+    .code-section.unlocked .code-icon {
+      border-color: var(--card-text);
+      color: var(--card-text);
+    }
+
+    .code-icon i {
+      transition: transform 0.4s ease;
+    }
+
+    .code-section.unlocked .code-icon i {
+      transform: rotate(-12deg);
+    }
+
+    .code-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--card-muted);
+    }
+
+    .code-hint {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    .code-input-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .code-input-wrap.hidden {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+    }
+
+    .code-input {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.6rem;
+      font-weight: 500;
+      letter-spacing: 14px;
+      text-indent: 14px;
+      text-align: center;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      background: transparent;
+      color: var(--card-text);
+      padding: 10px 0;
+      width: 160px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .code-input:focus {
+      border-bottom-color: var(--card-text);
+    }
+
+    .code-input::placeholder {
+      color: #d0d0d0;
+      letter-spacing: 10px;
+      font-weight: 300;
+    }
+
+    .code-input.shake {
+      animation: shake 0.45s ease;
+      border-bottom-color: var(--error);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .code-submit {
+      background: var(--card-text);
+      color: var(--card-bg);
+      border: none;
+      padding: 11px 28px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 1.5px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .code-submit:hover {
+      background: #333;
+      letter-spacing: 2px;
+    }
+
+    .code-submit:active { transform: scale(0.97); }
+
+    .code-submit:focus-visible {
+      outline: 2px solid var(--card-muted);
+      outline-offset: 3px;
+    }
+
+    .code-error {
+      font-size: 0.78rem;
+      color: var(--error);
+      letter-spacing: 0.5px;
+      min-height: 18px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .code-error.visible { opacity: 1; }
+
+    /* Código revelado */
+    .code-revealed {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .code-revealed.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .secret-code {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 8px;
+      color: var(--card-text);
+      padding: 14px 28px;
+      border: 2px solid var(--card-text);
+      border-radius: 3px;
+    }
+
+    .code-saved-msg {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.88rem;
+      color: var(--card-muted);
+      line-height: 1.6;
+    }
+
+    .fin-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #ccc;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .fin-text.visible { opacity: 1; }
+
+    /* ========================================
+       Overlay y panel de pista
+       ======================================== */
     .overlay {
       position: fixed;
       inset: 0;
@@ -314,7 +531,6 @@
       pointer-events: auto;
     }
 
-    /* Panel de pista */
     .clue-panel {
       position: fixed;
       bottom: 0;
@@ -366,26 +582,23 @@
       transition: all 0.2s;
     }
 
-    .clue-close:hover {
-      color: #fff;
-      border-color: #666;
-    }
+    .clue-close:hover { color: #fff; border-color: #666; }
 
     .clue-close:focus-visible {
       outline: 2px solid #555;
       outline-offset: 2px;
     }
 
-    /* Responsive */
     @media (max-width: 480px) {
-      .card { padding: 36px 24px 32px; }
+      .card { padding: 36px 24px 28px; }
       .narrative { font-size: 1.05rem; }
       .bubble { font-size: 0.84rem; }
       .sticker-wrap { width: 52px; height: 52px; }
       .sticker-wrap i { font-size: 1.3rem; }
+      .code-input { font-size: 1.4rem; width: 140px; }
+      .secret-code { font-size: 1.3rem; padding: 12px 20px; }
     }
 
-    /* Movimiento reducido */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -407,15 +620,13 @@
     <div class="divider" id="divider"></div>
     <div class="chat" id="chat">
       <div class="chat-timestamp" id="timestamp">24 de junio · 11:42 PM</div>
-      <div class="bubble bubble-left" id="bubbleSticker">
-        <div class="sticker-wrap">
-          <i class="fas fa-heart"></i>
-        </div>
+      <div class="bubble bubble-right" id="bubbleSticker">
+        <div class="sticker-wrap"><i class="fas fa-heart"></i></div>
       </div>
-      <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-indicator typing-left" id="typingIndicator">
         <span></span><span></span><span></span>
       </div>
-      <div class="bubble bubble-right" id="bubbleReply">
+      <div class="bubble bubble-left" id="bubbleReply">
         ¿No me extrañas? Jajajaja
       </div>
     </div>
@@ -423,6 +634,34 @@
       Y en ese "jajajaja" se escondía todo lo que no se atrevía a decir.
     </div>
     <button class="btn" id="mainBtn" aria-label="Descubrir la primera pista">Descubrir pista</button>
+
+    <!-- Sección de código -->
+    <div id="codeSection" class="code-section">
+      <div class="code-icon" id="codeIcon"><i class="fas fa-lock" id="lockIcon"></i></div>
+      <div class="code-label">Introduce el código</div>
+      <div class="code-hint">Piensa en la fecha de este capítulo</div>
+      <div class="code-input-wrap" id="codeInputWrap">
+        <input
+          type="text"
+          id="codeInput"
+          class="code-input"
+          placeholder="_ _ _ _"
+          maxlength="4"
+          autocomplete="off"
+          inputmode="numeric"
+          aria-label="Código de desbloqueo"
+        >
+        <button type="button" id="codeSubmit" class="code-submit">Desbloquear</button>
+        <div class="code-error" id="codeError">Código incorrecto. Intenta de nuevo.</div>
+      </div>
+      <div id="codeRevealed" class="code-revealed">
+        <div class="secret-code" id="secretCode"></div>
+        <div class="code-saved-msg">Código guardado. Lo necesitarás más adelante.</div>
+      </div>
+      <div class="fin-text" id="finText">Fin del Capítulo I</div>
+    </div>
+
+    <nav class="progress" id="progress" aria-label="Progreso"></nav>
   </main>
 
   <aside class="clue-panel" id="cluePanel" role="dialog" aria-label="Pista revelada" aria-hidden="true">
@@ -434,14 +673,58 @@
   </aside>
 
   <script>
-    // ========================================
-    // Ondas cebra — canvas animado
-    // ========================================
+    // ============================================================
+    //  CONFIGURACIÓN
+    // ============================================================
+    const CONFIG = {
+      keyCode: '2406',
+      secretCode: '737',
+      storageKey: 'sentirte_cap1_codigo',
+      clue: 'Tu primera pista está donde siempre empieza tu día. Mira con atención.'
+    };
+
+    // ============================================================
+    //  Referencias al DOM
+    // ============================================================
+    const card            = document.getElementById('card');
+    const chapterEl       = document.getElementById('chapter');
+    const narrativeEl     = document.getElementById('narrative');
+    const dividerEl       = document.getElementById('divider');
+    const chatEl          = document.getElementById('chat');
+    const timestampEl     = document.getElementById('timestamp');
+    const bubbleSticker   = document.getElementById('bubbleSticker');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const bubbleReply     = document.getElementById('bubbleReply');
+    const reflectionEl    = document.getElementById('reflection');
+    const btnEl           = document.getElementById('mainBtn');
+    const progressEl      = document.getElementById('progress');
+    const codeSection     = document.getElementById('codeSection');
+    const codeIcon        = document.getElementById('codeIcon');
+    const lockIcon        = document.getElementById('lockIcon');
+    const codeInputWrap   = document.getElementById('codeInputWrap');
+    const codeInput       = document.getElementById('codeInput');
+    const codeSubmitBtn   = document.getElementById('codeSubmit');
+    const codeError       = document.getElementById('codeError');
+    const codeRevealed    = document.getElementById('codeRevealed');
+    const secretCodeEl    = document.getElementById('secretCode');
+    const finText         = document.getElementById('finText');
+    const cluePanel       = document.getElementById('cluePanel');
+    const clueText        = document.getElementById('clueText');
+    const clueClose       = document.getElementById('clueClose');
+    const overlayEl       = document.getElementById('overlay');
+
+    let isTyping  = false;
+    let typeTimer = null;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ============================================================
+    //  Ondas cebra
+    // ============================================================
     const canvas = document.getElementById('zebraCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx    = canvas.getContext('2d');
 
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
+      canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resizeCanvas);
@@ -450,110 +733,64 @@
     function drawZebra(timestamp) {
       const w = canvas.width;
       const h = canvas.height;
-
-      // Fondo negro
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, w, h);
-
       const numBands = 16;
-      const bandH = h / numBands;
-      const amp = 14;
-      const freq = 0.004;
-      const speed = 0.00025;
-
-      // Calcula la posición Y de una onda en una coordenada x y banda dada
+      const bandH    = h / numBands;
+      const amp      = 14;
+      const freq     = 0.004;
+      const speed    = 0.00025;
       function waveY(x, band) {
         return band * bandH
           + Math.sin(timestamp * speed + x * freq + band * 0.9) * amp
           + Math.sin(timestamp * speed * 0.6 + x * freq * 1.8 + band * 1.3) * amp * 0.35;
       }
-
-      // Dibujar bandas blancas (índices pares)
       for (let i = 0; i < numBands; i += 2) {
         ctx.beginPath();
-        // Borde superior de la banda
         ctx.moveTo(0, waveY(0, i));
-        for (let x = 0; x <= w; x += 3) {
-          ctx.lineTo(x, waveY(x, i));
-        }
-        // Borde inferior (reverso para cerrar la forma)
-        for (let x = w; x >= 0; x -= 3) {
-          ctx.lineTo(x, waveY(x, i + 1));
-        }
+        for (let x = 0; x <= w; x += 3) ctx.lineTo(x, waveY(x, i));
+        for (let x = w; x >= 0; x -= 3) ctx.lineTo(x, waveY(x, i + 1));
         ctx.closePath();
         ctx.fillStyle = '#ffffff';
         ctx.fill();
       }
-
       requestAnimationFrame(drawZebra);
     }
-
     requestAnimationFrame(drawZebra);
 
-    // ========================================
-    // Referencias al DOM
-    // ========================================
-    const card = document.getElementById('card');
-    const chapterEl = document.getElementById('chapter');
-    const narrativeEl = document.getElementById('narrative');
-    const dividerEl = document.getElementById('divider');
-    const chatEl = document.getElementById('chat');
-    const timestampEl = document.getElementById('timestamp');
-    const bubbleSticker = document.getElementById('bubbleSticker');
-    const typingIndicator = document.getElementById('typingIndicator');
-    const bubbleReply = document.getElementById('bubbleReply');
-    const reflectionEl = document.getElementById('reflection');
-    const btnEl = document.getElementById('mainBtn');
-    const cluePanel = document.getElementById('cluePanel');
-    const clueText = document.getElementById('clueText');
-    const clueClose = document.getElementById('clueClose');
-    const overlayEl = document.getElementById('overlay');
+    // ============================================================
+    //  Progreso
+    // ============================================================
+    (function renderProgress() {
+      progressEl.innerHTML = '';
+      const dot = document.createElement('div');
+      dot.className = 'progress-dot active';
+      progressEl.appendChild(dot);
+    })();
 
-    // ========================================
-    // Estado
-    // ========================================
-    let isTyping = false;
-    let typeTimer = null;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // ============================================================
+    //  Aparición de la tarjeta
+    // ============================================================
+    setTimeout(() => card.classList.add('visible'), 250);
+    setTimeout(() => chapterEl.classList.add('visible'), 800);
+    setTimeout(() => startNarrative(), 1100);
+    setTimeout(() => card.classList.add('tilt-ready'), 2000);
 
-    // ========================================
-    // Aparición de la tarjeta
-    // ========================================
-    setTimeout(() => {
-      card.classList.add('visible');
-    }, 250);
-
-    setTimeout(() => {
-      chapterEl.classList.add('visible');
-    }, 800);
-
-    setTimeout(() => {
-      startNarrative();
-    }, 1100);
-
-    // Activar tilt después de la aparición
-    setTimeout(() => {
-      card.classList.add('tilt-ready');
-    }, 2000);
-
-    // ========================================
-    // Efecto máquina de escribir
-    // ========================================
+    // ============================================================
+    //  Máquina de escribir
+    // ============================================================
     function typeText(text, el, callback) {
       isTyping = true;
       el.innerHTML = '';
-
       if (reducedMotion) {
         el.textContent = text;
         isTyping = false;
         if (callback) callback();
         return;
       }
-
       let idx = 0;
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
-
       function type() {
         if (idx < text.length) {
           el.innerHTML = text.substring(0, idx + 1);
@@ -568,7 +805,6 @@
       type();
     }
 
-    // Clic para saltar la animación
     narrativeEl.addEventListener('click', () => {
       if (isTyping) {
         clearTimeout(typeTimer);
@@ -578,9 +814,9 @@
       }
     });
 
-    // ========================================
-    // Secuencia narrativa
-    // ========================================
+    // ============================================================
+    //  Secuencia narrativa
+    // ============================================================
     function startNarrative() {
       typeText(
         'No fue un día cualquiera. Fue el día en que un sticker cambió el rumbo de algo que no sabías que estaba esperando.',
@@ -590,56 +826,27 @@
     }
 
     function showChatSequence() {
-      // Mostrar separador
-      setTimeout(() => {
-        dividerEl.classList.add('visible');
-      }, 300);
-
-      // Mostrar sección de chat
-      setTimeout(() => {
-        chatEl.classList.add('visible');
-        timestampEl.classList.add('visible');
-      }, 500);
-
-      // Sticker bubble
-      setTimeout(() => {
-        bubbleSticker.classList.add('visible');
-      }, 800);
-
-      // Indicador de escritura
-      setTimeout(() => {
-        typingIndicator.classList.add('visible');
-      }, 1600);
-
-      // Ocultar indicador, mostrar respuesta
+      setTimeout(() => dividerEl.classList.add('visible'), 300);
+      setTimeout(() => chatEl.classList.add('visible'), 500);
+      setTimeout(() => timestampEl.classList.add('visible'), 550);
+      setTimeout(() => bubbleSticker.classList.add('visible'), 800);
+      setTimeout(() => typingIndicator.classList.add('visible'), 1600);
       setTimeout(() => {
         typingIndicator.classList.remove('visible');
         typingIndicator.style.display = 'none';
         bubbleReply.classList.add('visible');
       }, 2800);
-
-      // Reflexión
-      setTimeout(() => {
-        reflectionEl.classList.add('visible');
-      }, 3600);
-
-      // Botón
-      setTimeout(() => {
-        btnEl.classList.add('visible');
-      }, 4400);
+      setTimeout(() => reflectionEl.classList.add('visible'), 3600);
+      setTimeout(() => btnEl.classList.add('visible'), 4400);
     }
 
-    // ========================================
-    // Botón principal — revelar pista
-    // ========================================
+    // ============================================================
+    //  Botón → Panel de pista
+    // ============================================================
     btnEl.addEventListener('click', () => {
-      // *** CAMBIA ESTE TEXTO PARA PERSONALIZAR LA PISTA ***
-      showClue('Tu primera pista está donde siempre empieza tu día. Mira con atención.');
+      showClue(CONFIG.clue);
     });
 
-    // ========================================
-    // Panel de pista
-    // ========================================
     function showClue(text) {
       clueText.textContent = text;
       cluePanel.classList.add('visible');
@@ -652,22 +859,142 @@
       cluePanel.classList.remove('visible');
       cluePanel.setAttribute('aria-hidden', 'true');
       overlayEl.classList.remove('visible');
+      // Esperar a que el overlay se desvanezca completamente
+      setTimeout(() => showCodeSection(), 700);
     }
 
     clueClose.addEventListener('click', hideClue);
     overlayEl.addEventListener('click', hideClue);
-
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && cluePanel.classList.contains('visible')) {
-        hideClue();
+      if (e.key === 'Escape' && cluePanel.classList.contains('visible')) hideClue();
+    });
+
+    // ============================================================
+    //  Mostrar sección de código
+    // ============================================================
+    function showCodeSection() {
+      // Desvanecer contenido de la historia
+      chapterEl.style.transition = 'opacity 0.4s ease';
+      chapterEl.style.opacity = '0';
+
+      narrativeEl.style.transition = 'opacity 0.4s ease';
+      narrativeEl.style.opacity = '0';
+
+      dividerEl.style.opacity = '0';
+      chatEl.style.opacity = '0';
+      reflectionEl.style.opacity = '0';
+      reflectionEl.style.transform = 'translateY(0)';
+
+      btnEl.style.opacity = '0';
+      btnEl.style.pointerEvents = 'none';
+
+      // Después de desvanecer, ocultar y mostrar código
+      setTimeout(() => {
+        chapterEl.style.display = 'none';
+        narrativeEl.style.display = 'none';
+        dividerEl.style.display = 'none';
+        chatEl.style.display = 'none';
+        reflectionEl.style.display = 'none';
+        btnEl.style.display = 'none';
+
+        // Activar sección de código
+        codeSection.classList.add('active');
+
+        // Forzar reflow antes de enfocar
+        void codeSection.offsetHeight;
+
+        setTimeout(() => {
+          codeInput.focus();
+        }, 300);
+      }, 500);
+    }
+
+    // ============================================================
+    //  Lógica del código
+    // ============================================================
+    function submitCode() {
+      const entered = codeInput.value.trim();
+
+      if (entered === CONFIG.keyCode) {
+        unlockSuccess();
+      } else {
+        unlockFail();
+      }
+    }
+
+    function unlockSuccess() {
+      // Guardar en localStorage
+      try {
+        localStorage.setItem(CONFIG.storageKey, CONFIG.secretCode);
+      } catch (e) {
+        // localStorage no disponible, continuar igual
+      }
+
+      // Cambiar candado
+      codeSection.classList.add('unlocked');
+      lockIcon.className = 'fas fa-lock-open';
+
+      // Ocultar input con transición
+      codeInputWrap.classList.add('hidden');
+
+      // Mostrar código revelado
+      setTimeout(() => {
+        codeInputWrap.style.display = 'none';
+        secretCodeEl.textContent = CONFIG.secretCode;
+
+        // Forzar reflow
+        void codeRevealed.offsetHeight;
+
+        codeRevealed.style.display = 'flex';
+        codeRevealed.classList.add('visible');
+
+        setTimeout(() => {
+          finText.classList.add('visible');
+        }, 600);
+      }, 450);
+    }
+
+    function unlockFail() {
+      codeInput.classList.add('shake');
+      codeError.classList.add('visible');
+
+      setTimeout(() => {
+        codeInput.classList.remove('shake');
+        codeInput.value = '';
+        codeInput.focus();
+      }, 500);
+
+      setTimeout(() => {
+        codeError.classList.remove('visible');
+      }, 2500);
+    }
+
+    // Eventos del botón
+    codeSubmitBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      submitCode();
+    });
+
+    // Enter en el input
+    codeInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitCode();
       }
     });
 
-    // ========================================
-    // Tilt 3D sutil de la tarjeta
-    // ========================================
+    // Solo números en el input
+    codeInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // ============================================================
+    //  Tilt 3D sutil
+    // ============================================================
     card.addEventListener('mousemove', (e) => {
       if (!card.classList.contains('tilt-ready')) return;
+      if (codeSection.classList.contains('active')) return; // Desactivar tilt en código
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
