@@ -644,10 +644,10 @@
     // ============================================================
     const CHAPTER = {
       title: 'Capítulo IV',
-      narrative: 'Cuando alguien que te conoce de verdad lo nota, ya no hay vuelta atrás. Fabiola lo supo antes de que tú lo aceptaras.',
+      narrative: 'Cuando alguien que te conoce de verdad lo nota, ya no hay vuelta atrás.',
       timestamp: '15 de julio · 3:15 PM',
-      reflection: 'Somos complemento. Cuatro palabras que lo definieron todo. Y el «no me cambies por Gaby» fue la prueba de que ella también sabía que esto era diferente.',
-      clue: 'Busca donde guardas los recuerdos que solo ustedes dos conocen. Ahí hay algo esperando.',
+      reflection: 'Como que si conectamos. Cuatro palabras que lo definieron todo. Y el «no me cambies » fue la prueba de que ella también sabía que esto era diferente.',
+      clue: 'Busca donde ustedes dos coinciden mas veces para pasar tiempo. Ahí hay algo esperando.',
       chat: [
         { side: 'left',  sender: 'Fabiola', text: 'Ya andas extrañando a alguien, ¿verdad?',           typingMs: 750 },
         { side: 'right', sender: null,      text: 'Sí... la verdad sí la extraño',                     typingMs: 600 },
@@ -657,7 +657,7 @@
       keyCode: '1507',
       secretCode: 'COMPL-15',
       storageKey: 'sentirte_cap4_codigo',
-      codeHint: 'El día que alguien definió lo que ustedes son'
+      codeHint: 'Siendo uno complemento del otro'
     };
 
     // ============================================================
