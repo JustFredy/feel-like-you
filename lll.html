@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentirte Como Tú — Capítulo III</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #000000;
+      --fg: #ffffff;
+      --muted: #777777;
+      --card-bg: rgba(255, 255, 255, 0.96);
+      --card-text: #0a0a0a;
+      --card-muted: #666666;
+      --border: #e0e0e0;
+      --error: #c0392b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    canvas#zebraCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 3px;
+      padding: 44px 40px 36px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+      position: relative;
+      color: var(--card-text);
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card.tilt-ready {
+      transition: transform 0.18s ease-out;
+    }
+
+    .chapter {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--card-muted);
+      margin-bottom: 32px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .chapter.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .narrative {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      line-height: 1.85;
+      color: #333;
+      min-height: 50px;
+      margin-bottom: 24px;
+      cursor: default;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 1.5px;
+      height: 1.1em;
+      background: var(--card-text);
+      margin-left: 1px;
+      vertical-align: text-bottom;
+      animation: blink 0.7s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .divider {
+      width: 24px;
+      height: 1px;
+      background: var(--border);
+      margin: 0 auto 20px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .divider.visible { opacity: 1; }
+
+    /* ========================================
+       Contenedor de escenas
+       ======================================== */
+    .scene-container {
+      min-height: 60px;
+      margin-bottom: 20px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .scene-container.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scene-container.exiting {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+
+    .date-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--card-muted);
+      opacity: 0.6;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .scene-chat {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bubble {
+      max-width: 78%;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .bubble.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .bubble-left {
+      background: #1a1a1a;
+      color: #ffffff;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      margin-left: 4px;
+    }
+
+    .bubble-right {
+      background: #f5f5f5;
+      color: #1a1a1a;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      margin-right: 4px;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .typing-indicator.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .typing-indicator span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      animation: typingDot 1.4s ease-in-out infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingDot {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-3px); }
+    }
+
+    .typing-left {
+      align-self: flex-start;
+      margin-left: 4px;
+      background: #1a1a1a;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing-left span { background: #666; }
+
+    .typing-right {
+      align-self: flex-end;
+      margin-right: 4px;
+      background: #f5f5f5;
+      border-bottom-right-radius: 4px;
+    }
+
+    .typing-right span { background: #aaa; }
+
+    /* ========================================
+       Reflexión
+       ======================================== */
+    .reflection {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--card-muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reflection.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ========================================
+       Botón
+       ======================================== */
+    .btn {
+      background: var(--card-text);
+      color: var(--card-bg);
+      border: none;
+      padding: 13px 32px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 1.5px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+
+    .btn.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .btn:hover {
+      background: #333;
+      letter-spacing: 2px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--card-muted);
+      outline-offset: 3px;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.12);
+      transition: all 0.5s ease;
+    }
+
+    .progress-dot.completed { background: var(--card-text); }
+    .progress-dot.active {
+      background: var(--card-muted);
+      transform: scale(1.3);
+    }
+
+    /* ========================================
+       Sección de código
+       ======================================== */
+    .code-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.6s ease, max-height 0.6s ease;
+    }
+
+    .code-section.active {
+      opacity: 1;
+      max-height: 500px;
+    }
+
+    .code-icon {
+      width: 48px;
+      height: 48px;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--card-muted);
+      font-size: 1rem;
+      transition: all 0.5s ease;
+    }
+
+    .code-section.unlocked .code-icon {
+      border-color: var(--card-text);
+      color: var(--card-text);
+    }
+
+    .code-icon i { transition: transform 0.4s ease; }
+    .code-section.unlocked .code-icon i { transform: rotate(-12deg); }
+
+    .code-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--card-muted);
+    }
+
+    .code-hint {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    .code-input-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .code-input-wrap.hidden {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+    }
+
+    .code-input {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.6rem;
+      font-weight: 500;
+      letter-spacing: 14px;
+      text-indent: 14px;
+      text-align: center;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      background: transparent;
+      color: var(--card-text);
+      padding: 10px 0;
+      width: 160px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .code-input:focus { border-bottom-color: var(--card-text); }
+
+    .code-input::placeholder {
+      color: #d0d0d0;
+      letter-spacing: 10px;
+      font-weight: 300;
+    }
+
+    .code-input.shake {
+      animation: shake 0.45s ease;
+      border-bottom-color: var(--error);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .code-submit {
+      background: var(--card-text);
+      color: var(--card-bg);
+      border: none;
+      padding: 11px 28px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 1.5px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .code-submit:hover { background: #333; letter-spacing: 2px; }
+    .code-submit:active { transform: scale(0.97); }
+
+    .code-submit:focus-visible {
+      outline: 2px solid var(--card-muted);
+      outline-offset: 3px;
+    }
+
+    .code-error {
+      font-size: 0.78rem;
+      color: var(--error);
+      letter-spacing: 0.5px;
+      min-height: 18px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .code-error.visible { opacity: 1; }
+
+    .code-revealed {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .code-revealed.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .secret-code {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 8px;
+      color: var(--card-text);
+      padding: 14px 28px;
+      border: 2px solid var(--card-text);
+      border-radius: 3px;
+    }
+
+    .code-saved-msg {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.88rem;
+      color: var(--card-muted);
+      line-height: 1.6;
+    }
+
+    .fin-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #ccc;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .fin-text.visible { opacity: 1; }
+
+    /* ========================================
+       Overlay y panel de pista
+       ======================================== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .clue-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      background: #0a0a0a;
+      border-radius: 3px 3px 0 0;
+      padding: 32px 28px 40px;
+      max-width: 400px;
+      width: 92%;
+      z-index: 100;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .clue-panel.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .clue-header {
+      font-size: 0.65rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 16px;
+    }
+
+    .clue-text {
+      color: #ffffff;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
+
+    .clue-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: 1px solid #333;
+      color: #555;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .clue-close:hover { color: #fff; border-color: #666; }
+
+    .clue-close:focus-visible {
+      outline: 2px solid #555;
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 36px 24px 28px; }
+      .narrative { font-size: 1.05rem; }
+      .bubble { font-size: 0.84rem; }
+      .code-input { font-size: 1.4rem; width: 140px; }
+      .secret-code { font-size: 1.3rem; padding: 12px 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.15s !important;
+      }
+      .card { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="zebraCanvas" aria-hidden="true"></canvas>
+  <div class="overlay" id="overlay"></div>
+
+  <main class="card" id="card">
+    <div class="chapter" id="chapter"></div>
+    <div class="narrative" id="narrative" aria-live="polite"></div>
+    <div class="divider" id="divider"></div>
+    <div class="scene-container" id="sceneContainer"></div>
+    <div class="reflection" id="reflection"></div>
+    <button class="btn" id="mainBtn" aria-label="Descubrir la pista">Descubrir pista</button>
+
+    <div id="codeSection" class="code-section">
+      <div class="code-icon" id="codeIcon"><i class="fas fa-lock" id="lockIcon"></i></div>
+      <div class="code-label">Introduce el código</div>
+      <div class="code-hint" id="codeHint"></div>
+      <div class="code-input-wrap" id="codeInputWrap">
+        <input type="text" id="codeInput" class="code-input" placeholder="_ _ _ _" maxlength="4" autocomplete="off" inputmode="numeric" aria-label="Código de desbloqueo">
+        <button type="button" id="codeSubmit" class="code-submit">Desbloquear</button>
+        <div class="code-error" id="codeError">Código incorrecto. Intenta de nuevo.</div>
+      </div>
+      <div id="codeRevealed" class="code-revealed">
+        <div class="secret-code" id="secretCode"></div>
+        <div class="code-saved-msg">Código guardado. Lo necesitarás más adelante.</div>
+      </div>
+      <div class="fin-text" id="finText">Fin del Capítulo III</div>
+    </div>
+
+    <nav class="progress" id="progress" aria-label="Progreso"></nav>
+  </main>
+
+  <aside class="clue-panel" id="cluePanel" role="dialog" aria-label="Pista revelada" aria-hidden="true">
+    <button class="clue-close" id="clueClose" aria-label="Cerrar pista"><i class="fas fa-times"></i></button>
+    <div class="clue-header">Tercera pista</div>
+    <div class="clue-text" id="clueText"></div>
+  </aside>
+
+  <script>
+    // ============================================================
+    //  CONFIGURACIÓN
+    // ============================================================
+    const CHAPTER = {
+      title: 'Capítulo III',
+      introNarrative: 'Ya no era casualidad. Se buscaban. Cada invitación, cada plan, cada hora decidida era una manera de decir «quiero estar cerca de ti» sin decirlo.',
+      scenes: [
+        {
+          date: '26 de junio',
+          chat: [
+            { side: 'left', text: 'Ya vente a comer una pizza conmigo. Ándale', typingMs: 600 }
+          ]
+        },
+        {
+          date: '28 de junio',
+          chat: [
+            { side: 'left', text: 'Las papas se quedaron. Las comemos cuando tenga aperturas', typingMs: 750 },
+            { side: 'right', text: 'El trabajo se hace menos aburrido cuando estás tú', typingMs: 600 }
+          ]
+        },
+        {
+          date: '16 de julio',
+          chat: [
+            { side: 'left', text: '¿A qué hora nos vamos a ir a comer?', typingMs: 650 },
+            { side: 'left', text: 'Que tú decides, amigo', typingMs: 450 }
+          ]
+        },
+        {
+          date: '17 de julio',
+          chat: [
+            { side: 'right', text: 'Te espero afuera. Pay ya está listo. Y armé mesita de picnic', typingMs: 700 },
+            { side: 'left', text: 'Jajaja, ¿en serio eso? Acepto el plan', typingMs: 500 }
+          ]
+        }
+      ],
+      reflection: 'La pizza fue el inicio. Las papas fueron la excusa. Las hamburguesas fueron el plan. Y la mesita de picnic fue la prueba: cuando se buscan, siempre encuentran.',
+      clue: 'Tu siguiente pista está donde compartieron su primer plan juntos. Busca bien.',
+      keyCode: '1707',
+      secretCode: 'CERCAS-17',
+      storageKey: 'sentirte_cap3_codigo',
+      codeHint: 'El día que improvisaste una mesita de picnic'
+    };
+
+    // ============================================================
+    //  Referencias al DOM
+    // ============================================================
+    const card            = document.getElementById('card');
+    const chapterEl       = document.getElementById('chapter');
+    const narrativeEl     = document.getElementById('narrative');
+    const dividerEl       = document.getElementById('divider');
+    const sceneContainer  = document.getElementById('sceneContainer');
+    const reflectionEl    = document.getElementById('reflection');
+    const btnEl           = document.getElementById('mainBtn');
+    const progressEl      = document.getElementById('progress');
+    const codeSection     = document.getElementById('codeSection');
+    const codeIcon        = document.getElementById('codeIcon');
+    const lockIcon        = document.getElementById('lockIcon');
+    const codeInputWrap   = document.getElementById('codeInputWrap');
+    const codeInput       = document.getElementById('codeInput');
+    const codeSubmitBtn   = document.getElementById('codeSubmit');
+    const codeError       = document.getElementById('codeError');
+    const codeRevealed    = document.getElementById('codeRevealed');
+    const secretCodeEl    = document.getElementById('secretCode');
+    const finText         = document.getElementById('finText');
+    const codeHintEl      = document.getElementById('codeHint');
+    const cluePanel       = document.getElementById('cluePanel');
+    const clueText        = document.getElementById('clueText');
+    const clueClose       = document.getElementById('clueClose');
+    const overlayEl       = document.getElementById('overlay');
+
+    let isTyping = false;
+    let typeTimer = null;
+    let sceneTimers = [];
+    let currentScene = 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ============================================================
+    //  Ondas cebra
+    // ============================================================
+    const canvas = document.getElementById('zebraCanvas');
+    const ctx    = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawZebra(timestamp) {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+      const numBands = 16;
+      const bandH    = h / numBands;
+      const amp      = 14;
+      const freq     = 0.004;
+      const speed    = 0.00025;
+      function waveY(x, band) {
+        return band * bandH
+          + Math.sin(timestamp * speed + x * freq + band * 0.9) * amp
+          + Math.sin(timestamp * speed * 0.6 + x * freq * 1.8 + band * 1.3) * amp * 0.35;
+      }
+      for (let i = 0; i < numBands; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, waveY(0, i));
+        for (let x = 0; x <= w; x += 3) ctx.lineTo(x, waveY(x, i));
+        for (let x = w; x >= 0; x -= 3) ctx.lineTo(x, waveY(x, i + 1));
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+      requestAnimationFrame(drawZebra);
+    }
+    requestAnimationFrame(drawZebra);
+
+    // ============================================================
+    //  Progreso (3 capítulos)
+    // ============================================================
+    (function renderProgress() {
+      progressEl.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot';
+        if (i < 2) dot.classList.add('completed');
+        if (i === 2) dot.classList.add('active');
+        progressEl.appendChild(dot);
+      }
+    })();
+
+    // ============================================================
+    //  Aparición de la tarjeta
+    // ============================================================
+    setTimeout(() => card.classList.add('visible'), 250);
+    setTimeout(() => {
+      chapterEl.textContent = CHAPTER.title;
+      chapterEl.classList.add('visible');
+    }, 800);
+    setTimeout(() => startNarrative(), 1100);
+    setTimeout(() => card.classList.add('tilt-ready'), 2000);
+
+    // ============================================================
+    //  Máquina de escribir
+    // ============================================================
+    function typeText(text, el, callback) {
+      isTyping = true;
+      el.innerHTML = '';
+      if (reducedMotion) {
+        el.textContent = text;
+        isTyping = false;
+        if (callback) callback();
+        return;
+      }
+      let idx = 0;
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      function type() {
+        if (idx < text.length) {
+          el.innerHTML = text.substring(0, idx + 1);
+          el.appendChild(cursor);
+          idx++;
+          typeTimer = setTimeout(type, 30);
+        } else {
+          isTyping = false;
+          if (callback) callback();
+        }
+      }
+      type();
+    }
+
+    narrativeEl.addEventListener('click', () => {
+      if (isTyping) {
+        clearTimeout(typeTimer);
+        narrativeEl.textContent = CHAPTER.introNarrative;
+        isTyping = false;
+        startScenes();
+      }
+    });
+
+    // ============================================================
+    //  Secuencia narrativa
+    // ============================================================
+    function startNarrative() {
+      typeText(CHAPTER.introNarrative, narrativeEl, startScenes);
+    }
+
+    // ============================================================
+    //  Sistema de escenas
+    // ============================================================
+    function createBubble(side, text) {
+      const el = document.createElement('div');
+      el.className = 'bubble bubble-' + side;
+      el.textContent = text;
+      return el;
+    }
+
+    function createTyping(side) {
+      const el = document.createElement('div');
+      el.className = 'typing-indicator typing-' + side;
+      el.innerHTML = '<span></span><span></span><span></span>';
+      return el;
+    }
+
+    function clearSceneTimers() {
+      sceneTimers.forEach(t => clearTimeout(t));
+      sceneTimers = [];
+    }
+
+    function startScenes() {
+      currentScene = 0;
+      setTimeout(() => dividerEl.classList.add('visible'), 300);
+      setTimeout(() => playScene(0), 600);
+    }
+
+    function playScene(index) {
+      if (index >= CHAPTER.scenes.length) {
+        showReflection();
+        return;
+      }
+
+      clearSceneTimers();
+      currentScene = index;
+      const scene = CHAPTER.scenes[index];
+
+      // Limpiar contenedor
+      sceneContainer.innerHTML = '';
+      sceneContainer.classList.remove('exiting');
+      sceneContainer.classList.add('active');
+
+      // Etiqueta de fecha
+      const dateEl = document.createElement('div');
+      dateEl.className = 'date-label';
+      dateEl.textContent = scene.date;
+      sceneContainer.appendChild(dateEl);
+
+      // Área de chat
+      const chatArea = document.createElement('div');
+      chatArea.className = 'scene-chat';
+      sceneContainer.appendChild(chatArea);
+
+      let delay = 200;
+      const totalStart = Date.now();
+
+      scene.chat.forEach((item) => {
+        const typingEl = createTyping(item.side);
+        chatArea.appendChild(typingEl);
+
+        const typingStart = delay;
+        const typingEnd   = delay + item.typingMs;
+
+        sceneTimers.push(setTimeout(() => typingEl.classList.add('visible'), typingStart));
+
+        sceneTimers.push(setTimeout(() => {
+          typingEl.classList.remove('visible');
+          setTimeout(() => typingEl.remove(), 300);
+          const bubbleEl = createBubble(item.side, item.text);
+          chatArea.appendChild(bubbleEl);
+          setTimeout(() => bubbleEl.classList.add('visible'), 50);
+        }, typingEnd));
+
+        delay = typingEnd + 400;
+      });
+
+      // Después de todos los mensajes, pausa y transición
+      const sceneEndDelay = delay + 700;
+      sceneTimers.push(setTimeout(() => {
+        // Desvanecer escena actual
+        sceneContainer.classList.remove('active');
+        sceneContainer.classList.add('exiting');
+
+        sceneTimers.push(setTimeout(() => {
+          sceneContainer.classList.remove('exiting');
+          playScene(index + 1);
+        }, 450));
+      }, sceneEndDelay));
+    }
+
+    // Clic en escena para saltar a la siguiente
+    sceneContainer.addEventListener('click', () => {
+      clearSceneTimers();
+      sceneContainer.classList.remove('active');
+      sceneContainer.classList.add('exiting');
+      setTimeout(() => {
+        sceneContainer.classList.remove('exiting');
+        playScene(currentScene + 1);
+      }, 450);
+    });
+
+    // ============================================================
+    //  Reflexión y botón
+    // ============================================================
+    function showReflection() {
+      sceneContainer.innerHTML = '';
+      sceneContainer.classList.remove('active', 'exiting');
+
+      reflectionEl.textContent = CHAPTER.reflection;
+      reflectionEl.classList.add('visible');
+
+      setTimeout(() => btnEl.classList.add('visible'), 800);
+    }
+
+    // ============================================================
+    //  Botón → Panel de pista
+    // ============================================================
+    btnEl.addEventListener('click', () => {
+      showClue(CHAPTER.clue);
+    });
+
+    function showClue(text) {
+      clueText.textContent = text;
+      cluePanel.classList.add('visible');
+      cluePanel.setAttribute('aria-hidden', 'false');
+      overlayEl.classList.add('visible');
+      clueClose.focus();
+    }
+
+    function hideClue() {
+      cluePanel.classList.remove('visible');
+      cluePanel.setAttribute('aria-hidden', 'true');
+      overlayEl.classList.remove('visible');
+      setTimeout(() => showCodeSection(), 700);
+    }
+
+    clueClose.addEventListener('click', hideClue);
+    overlayEl.addEventListener('click', hideClue);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && cluePanel.classList.contains('visible')) hideClue();
+    });
+
+    // ============================================================
+    //  Mostrar sección de código
+    // ============================================================
+    function showCodeSection() {
+      chapterEl.style.transition = 'opacity 0.4s ease';
+      chapterEl.style.opacity = '0';
+      narrativeEl.style.transition = 'opacity 0.4s ease';
+      narrativeEl.style.opacity = '0';
+      dividerEl.style.opacity = '0';
+      reflectionEl.style.opacity = '0';
+      reflectionEl.style.transform = 'translateY(0)';
+      btnEl.style.opacity = '0';
+      btnEl.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        chapterEl.style.display = 'none';
+        narrativeEl.style.display = 'none';
+        dividerEl.style.display = 'none';
+        reflectionEl.style.display = 'none';
+        btnEl.style.display = 'none';
+
+        codeHintEl.textContent = CHAPTER.codeHint;
+        codeSection.classList.add('active');
+        void codeSection.offsetHeight;
+        setTimeout(() => codeInput.focus(), 300);
+      }, 500);
+    }
+
+    // ============================================================
+    //  Lógica del código
+    // ============================================================
+    function submitCode() {
+      const entered = codeInput.value.trim();
+      if (entered === CHAPTER.keyCode) {
+        unlockSuccess();
+      } else {
+        unlockFail();
+      }
+    }
+
+    function unlockSuccess() {
+      try { localStorage.setItem(CHAPTER.storageKey, CHAPTER.secretCode); } catch (e) {}
+
+      codeSection.classList.add('unlocked');
+      lockIcon.className = 'fas fa-lock-open';
+      codeInputWrap.classList.add('hidden');
+
+      setTimeout(() => {
+        codeInputWrap.style.display = 'none';
+        secretCodeEl.textContent = CHAPTER.secretCode;
+        void codeRevealed.offsetHeight;
+        codeRevealed.style.display = 'flex';
+        codeRevealed.classList.add('visible');
+        setTimeout(() => finText.classList.add('visible'), 600);
+      }, 450);
+    }
+
+    function unlockFail() {
+      codeInput.classList.add('shake');
+      codeError.classList.add('visible');
+      setTimeout(() => {
+        codeInput.classList.remove('shake');
+        codeInput.value = '';
+        codeInput.focus();
+      }, 500);
+      setTimeout(() => codeError.classList.remove('visible'), 2500);
+    }
+
+    codeSubmitBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      submitCode();
+    });
+
+    codeInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); submitCode(); }
+    });
+
+    codeInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // ============================================================
+    //  Tilt 3D
+    // ============================================================
+    card.addEventListener('mousemove', (e) => {
+      if (!card.classList.contains('tilt-ready')) return;
+      if (codeSection.classList.contains('active')) return;
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const rx = ((y - cy) / cy) * -2;
+      const ry = ((x - cx) / cx) * 2;
+      card.style.transform = 'perspective(800px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+    });
+
+    card.addEventListener('mouseleave', () => {
+      if (!card.classList.contains('tilt-ready')) return;
+      card.style.transform = 'perspective(800px) rotateX(0) rotateY(0)';
+    });
+  </script>
+</body>
+</html>
