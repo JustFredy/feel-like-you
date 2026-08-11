@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loss Analytics Pro — Retail Loss Intelligence</title>
+
+<!-- ============ CDN DEPENDENCIES ============ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<!-- Google Fonts: Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+  // Tailwind config — extend with custom Linear/Vercel dark palette
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+        colors: {
+          // Base dark surfaces (Vercel / Linear style)
+          ink: {
+            950: '#09090b',
+            900: '#0b0b0f',
+            850: '#0f0f14',
+            800: '#131318',
+            750: '#18181b',
+            700: '#1e1e24',
+            650: '#27272a',
+            600: '#2d2d33',
+            500: '#3f3f46',
+            400: '#52525b',
+            300: '#71717a',
+            200: '#a1a1aa',
+            100: '#d4d4d8',
+            50:  '#f4f4f5',
+          },
+          // Accent — Electric Blue
+          accent: {
+            DEFAULT: '#3b82f6',
+            bright:  '#60a5fa',
+            deep:    '#2563eb',
+            glow:    'rgba(59,130,246,0.35)',
+          },
+          // Loss — Red
+          loss: {
+            DEFAULT: '#ef4444',
+            bright:  '#f87171',
+            deep:    '#dc2626',
+            glow:    'rgba(239,68,68,0.30)',
+          },
+          // Sales — Green
+          sales: {
+            DEFAULT: '#10b981',
+            bright:  '#34d399',
+            deep:    '#059669',
+            glow:    'rgba(16,185,129,0.30)',
+          },
+          // Warning — Amber
+          warn: {
+            DEFAULT: '#f59e0b',
+            bright:  '#fbbf24',
+          },
+        },
+        animation: {
+          'fade-in':    'fadeIn 0.45s cubic-bezier(0.16,1,0.3,1)',
+          'slide-down': 'slideDown 0.35s cubic-bezier(0.16,1,0.3,1)',
+          'slide-up':   'slideUp 0.35s cubic-bezier(0.16,1,0.3,1)',
+          'scale-in':   'scaleIn 0.3s cubic-bezier(0.16,1,0.3,1)',
+          'shimmer':    'shimmer 1.8s linear infinite',
+          'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+          'count-up':   'countUp 0.8s cubic-bezier(0.16,1,0.3,1)',
+        },
+        keyframes: {
+          fadeIn:    { '0%':{opacity:'0'}, '100%':{opacity:'1'} },
+          slideDown: { '0%':{opacity:'0', transform:'translateY(-8px)'}, '100%':{opacity:'1', transform:'translateY(0)'} },
+          slideUp:   { '0%':{opacity:'0', transform:'translateY(8px)'}, '100%':{opacity:'1', transform:'translateY(0)'} },
+          scaleIn:   { '0%':{opacity:'0', transform:'scale(0.96)'}, '100%':{opacity:'1', transform:'scale(1)'} },
+          shimmer:   { '0%':{backgroundPosition:'-1000px 0'}, '100%':{backgroundPosition:'1000px 0'} },
+          pulseGlow: { '0%,100%':{boxShadow:'0 0 0 0 rgba(59,130,246,0.4)'}, '50%':{boxShadow:'0 0 0 8px rgba(59,130,246,0)'} },
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  /* ============================================================
+     DESIGN SYSTEM — Loss Analytics Pro
+     Linear / Vercel inspired dark theme
+     ============================================================ */
+  :root {
+    --bg-base:        #09090b;
+    --bg-surface:     #0f0f14;
+    --bg-elevated:    #18181b;
+    --border-subtle:  #27272a;
+    --border-strong:  #3f3f46;
+    --text-primary:   #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-muted:     #71717a;
+    --accent:         #3b82f6;
+    --loss:           #ef4444;
+    --sales:          #10b981;
+  }
+
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html, body { background: var(--bg-base); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; }
+
+  /* Custom scrollbar — minimal dark */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #3f3f46; background-clip: padding-box; border: 2px solid transparent; }
+
+  /* Gradient mesh background overlay */
+  .mesh-bg {
+    background-image:
+      radial-gradient(at 12% 8%, rgba(59,130,246,0.10) 0px, transparent 50%),
+      radial-gradient(at 88% 12%, rgba(239,68,68,0.06) 0px, transparent 50%),
+      radial-gradient(at 50% 92%, rgba(16,185,129,0.05) 0px, transparent 50%);
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: linear-gradient(180deg, rgba(24,24,27,0.85) 0%, rgba(15,15,20,0.85) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .glass-card:hover {
+    border-color: #3f3f46;
+  }
+
+  /* KPI card hover lift */
+  .kpi-card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), border-color 0.2s ease; }
+  .kpi-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  /* Sidebar nav item active state */
+  .nav-item {
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0.04) 100%);
+    color: #f4f4f5;
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
+    background: var(--accent);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 12px var(--accent);
+  }
+  .nav-item:not(.active):hover { background: rgba(39,39,42,0.5); color: #d4d4d8; }
+
+  /* Collapsed sidebar */
+  .sidebar-collapsed { width: 72px !important; }
+  .sidebar-collapsed .nav-label,
+  .sidebar-collapsed .brand-text,
+  .sidebar-collapsed .sidebar-section-title { opacity: 0; pointer-events: none; }
+  .sidebar-collapsed .nav-item { justify-content: center; }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+  }
+  .badge-critical { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.30); }
+  .badge-overstock { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: rgba(245,158,11,0.30); }
+  .badge-core { background: rgba(168,85,247,0.12); color: #c084fc; border-color: rgba(168,85,247,0.30); }
+  .badge-ghost { background: rgba(107,114,128,0.18); color: #d1d5db; border-color: rgba(107,114,128,0.35); }
+  .badge-healthy { background: rgba(16,185,129,0.12); color: #34d399; border-color: rgba(16,185,129,0.30); }
+  .badge-watch { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.30); }
+
+  /* Data table */
+  .data-table { border-collapse: separate; border-spacing: 0; }
+  .data-table thead th {
+    position: sticky; top: 0; z-index: 10;
+    background: #131318;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border-subtle);
+    user-select: none;
+    transition: background 0.15s ease;
+  }
+  .data-table thead th:hover { background: #18181b; }
+  .data-table tbody tr {
+    border-bottom: 1px solid rgba(39,39,42,0.5);
+    transition: background 0.15s ease;
+  }
+  .data-table tbody tr:hover { background: rgba(39,39,42,0.35); }
+  .data-table tbody tr.expanded { background: rgba(59,130,246,0.06); }
+  .sort-asc::after  { content: ' ↑'; color: var(--accent); }
+  .sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+  /* Expandable row animation */
+  .expand-panel {
+    overflow: hidden;
+    animation: slideDown 0.35s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* Toast */
+  .toast {
+    animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* Number tick animation */
+  .num-tick { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+
+  /* Custom file drop zone */
+  .drop-zone {
+    transition: all 0.2s ease;
+    background: linear-gradient(180deg, rgba(24,24,27,0.6) 0%, rgba(15,15,20,0.6) 100%);
+  }
+  .drop-zone.dragging {
+    border-color: var(--accent) !important;
+    background: rgba(59,130,246,0.08);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+  }
+
+  /* Chart container */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* Focus ring */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Hide native number input arrows */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Tab transition */
+  .module-view { animation: fadeIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Tooltip */
+  [data-tooltip] { position: relative; }
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #18181b; color: #f4f4f5; border: 1px solid var(--border-subtle);
+    padding: 4px 8px; border-radius: 6px; font-size: 11px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 50;
+  }
+  [data-tooltip]:hover::after { opacity: 1; }
+
+  /* Scrollable virtualized table container */
+  .table-scroll { max-height: calc(100vh - 220px); overflow-y: auto; }
+
+  /* Lucide icon sizing */
+  .lucide { stroke-width: 1.75; }
+</style>
+</head>
+
+<body class="min-h-screen bg-ink-950 text-ink-50 mesh-bg">
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar"
+         class="sidebar-collapsed relative z-30 flex h-full w-72 flex-col border-r border-ink-650 bg-ink-900/80 backdrop-blur-xl transition-all duration-300 ease-out"
+         style="width: 288px;">
+    <!-- Brand -->
+    <div class="flex h-16 items-center gap-3 border-b border-ink-650 px-5">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-deep shadow-lg shadow-accent-glow">
+        <i data-lucide="activity" class="h-5 w-5 text-white"></i>
+      </div>
+      <div class="brand-text overflow-hidden transition-all duration-200">
+        <div class="text-[13px] font-bold tracking-tight text-ink-50">Loss Analytics</div>
+        <div class="text-[10.5px] font-medium text-accent-bright">PRO · v1.0</div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 overflow-y-auto px-3 py-5">
+      <div class="sidebar-section-title px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-ink-300">Workspace</div>
+      <ul class="space-y-1">
+        <li>
+          <button data-module="dashboard" class="nav-item active flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-200">
+            <i data-lucide="layout-dashboard" class="h-[18px] w-[18px] shrink-0"></i>
+            <span class="nav-label whitespace-nowrap">Dashboard Ejecutivo</span>
+          </button>
+        </li>
+        <li>
+          <button data-module="analysis" class="nav-item flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-200">
+            <i data-lucide="table-2" class="h-[18px] w-[18px] shrink-0"></i>
+            <span class="nav-label whitespace-nowrap">Análisis de Datos</span>
+          </button>
+        </li>
+        <li>
+          <button data-module="actions" class="nav-item flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-200">
+            <i data-lucide="zap" class="h-[18px] w-[18px] shrink-0"></i>
+            <span class="nav-label whitespace-nowrap">Motor de Acciones</span>
+            <span id="action-badge" class="nav-label ml-auto rounded-full bg-loss/15 px-1.5 py-0.5 text-[10px] font-bold text-loss-bright hidden"></span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-section-title mt-6 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-ink-300">Dataset</div>
+      <div class="nav-label rounded-lg border border-ink-650 bg-ink-850 px-3 py-2.5">
+        <div id="dataset-status" class="flex items-center gap-2">
+          <span class="h-2 w-2 rounded-full bg-ink-400"></span>
+          <span class="text-xs text-ink-300">Sin archivo cargado</span>
+        </div>
+        <div id="dataset-meta" class="mt-1 hidden text-[10.5px] text-ink-400"></div>
+      </div>
+    </nav>
+
+    <!-- Footer / Collapse -->
+    <div class="border-t border-ink-650 p-3">
+      <button id="toggle-sidebar" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-300 hover:bg-ink-750 hover:text-ink-100 transition-colors">
+        <i data-lucide="panel-left-close" id="sidebar-icon" class="h-[18px] w-[18px] shrink-0"></i>
+        <span class="nav-label">Contraer barra</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex flex-1 flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-ink-650 bg-ink-950/80 px-6 backdrop-blur-xl">
+      <!-- Page title -->
+      <div class="flex flex-col">
+        <h1 id="page-title" class="text-[15px] font-semibold tracking-tight text-ink-50">Dashboard Ejecutivo</h1>
+        <p id="page-subtitle" class="text-[11px] text-ink-300">Visión consolidada de mermas y fugas de inventario</p>
+      </div>
+
+      <!-- Search -->
+      <div class="ml-6 flex-1 max-w-md">
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400"></i>
+          <input id="global-search" type="text" placeholder="Buscar artículo, departamento..."
+                 class="w-full rounded-lg border border-ink-650 bg-ink-850 py-2 pl-9 pr-4 text-sm text-ink-50 placeholder-ink-400 focus:border-accent focus:bg-ink-800 transition-colors">
+          <kbd class="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-ink-600 bg-ink-750 px-1.5 py-0.5 text-[10px] font-mono text-ink-300">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Department filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-[11px] font-medium text-ink-300">Depto</label>
+        <select id="dept-filter" class="rounded-lg border border-ink-650 bg-ink-850 py-2 pl-3 pr-8 text-xs text-ink-50 focus:border-accent transition-colors">
+          <option value="all">Todos</option>
+        </select>
+      </div>
+
+      <!-- File uploader -->
+      <label for="file-input" class="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-glow hover:bg-accent-deep transition-colors">
+        <i data-lucide="upload" class="h-4 w-4"></i>
+        <span>Cargar Excel</span>
+      </label>
+      <input id="file-input" type="file" accept=".xlsx,.xls" class="hidden">
+
+      <!-- Sample data loader (visible before any upload) -->
+      <button id="load-sample" class="hidden inline-flex items-center gap-2 rounded-lg border border-ink-650 bg-ink-850 px-3 py-2 text-xs font-medium text-ink-200 hover:bg-ink-800 transition-colors">
+        <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+        <span>Demo</span>
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main id="main-content" class="flex-1 overflow-y-auto px-6 py-6">
+
+      <!-- ============ EMPTY STATE (no file) ============ -->
+      <section id="empty-state" class="flex flex-col items-center justify-center py-24">
+        <div class="drop-zone flex w-full max-w-2xl flex-col items-center rounded-2xl border-2 border-dashed border-ink-600 bg-ink-900/50 px-8 py-16 text-center">
+          <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-loss/20">
+            <i data-lucide="file-spreadsheet" class="h-8 w-8 text-accent-bright"></i>
+          </div>
+          <h2 class="text-xl font-bold tracking-tight text-ink-50">Carga tu archivo de mermas</h2>
+          <p class="mt-2 max-w-md text-sm text-ink-300">
+            Arrastra un archivo <span class="font-mono text-accent-bright">.xlsx</span> con la hoja <span class="font-mono text-accent-bright">"Export"</span> o haz clic en "Cargar Excel".
+            Los datos se procesan 100% en tu navegador — nada se sube a servidores.
+          </p>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <label for="file-input" class="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-glow hover:bg-accent-deep transition-colors">
+              <i data-lucide="upload-cloud" class="h-4 w-4"></i>
+              Seleccionar archivo
+            </label>
+            <button id="load-sample-2" class="inline-flex items-center gap-2 rounded-lg border border-ink-650 bg-ink-850 px-4 py-2.5 text-sm font-medium text-ink-200 hover:bg-ink-800 transition-colors">
+              <i data-lucide="sparkles" class="h-4 w-4"></i>
+              Probar con datos demo
+            </button>
+          </div>
+          <div class="mt-8 grid grid-cols-3 gap-6 border-t border-ink-700 pt-6 text-left">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-accent-bright">Dashboard</div>
+              <div class="mt-1 text-xs text-ink-300">KPIs, Pareto, scatter y distribución por categoría.</div>
+            </div>
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-sales-bright">Data Grid</div>
+              <div class="mt-1 text-xs text-ink-300">Tabla profesional con búsqueda, sort y badges de estado.</div>
+            </div>
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-loss-bright">Motor IA</div>
+              <div class="mt-1 text-xs text-ink-300">Diagnóstico automático y check-list persistente.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SKELETON LOADER ============ -->
+      <section id="skeleton-state" class="hidden">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div class="skeleton h-28 rounded-xl"></div>
+          <div class="skeleton h-28 rounded-xl"></div>
+          <div class="skeleton h-28 rounded-xl"></div>
+          <div class="skeleton h-28 rounded-xl"></div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="skeleton h-80 rounded-xl"></div>
+          <div class="skeleton h-80 rounded-xl"></div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="skeleton h-80 rounded-xl"></div>
+          <div class="skeleton h-80 rounded-xl"></div>
+        </div>
+      </section>
+
+      <!-- ============ MODULE: DASHBOARD ============ -->
+      <section id="module-dashboard" class="module-view hidden">
+        <!-- KPI Row -->
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <!-- Total Loss -->
+          <div class="kpi-card glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-loss-bright">
+                <i data-lucide="trending-down" class="h-4 w-4"></i> Total Loss
+              </div>
+              <span class="badge badge-critical">Merma</span>
+            </div>
+            <div class="mt-3 text-3xl font-bold tracking-tight text-ink-50 num-tick" id="kpi-loss">$0</div>
+            <div class="mt-1 text-xs text-ink-300" id="kpi-loss-sub">— artículos con fuga</div>
+            <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink-700">
+              <div id="kpi-loss-bar" class="h-full rounded-full bg-gradient-to-r from-loss to-loss-bright transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Total Ventas -->
+          <div class="kpi-card glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-sales-bright">
+                <i data-lucide="trending-up" class="h-4 w-4"></i> Total Ventas
+              </div>
+              <span class="badge badge-healthy">Revenue</span>
+            </div>
+            <div class="mt-3 text-3xl font-bold tracking-tight text-ink-50 num-tick" id="kpi-sales">$0</div>
+            <div class="mt-1 text-xs text-ink-300" id="kpi-sales-sub">— artículos vendidos</div>
+            <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink-700">
+              <div id="kpi-sales-bar" class="h-full rounded-full bg-gradient-to-r from-sales to-sales-bright transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- % Merma Global -->
+          <div class="kpi-card glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-warn-bright">
+                <i data-lucide="percent" class="h-4 w-4"></i> % Merma Global
+              </div>
+              <span class="badge badge-watch">Ratio</span>
+            </div>
+            <div class="mt-3 text-3xl font-bold tracking-tight text-ink-50 num-tick" id="kpi-ratio">0.00%</div>
+            <div class="mt-1 text-xs text-ink-300" id="kpi-ratio-sub">Pérdida / Ventas</div>
+            <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink-700">
+              <div id="kpi-ratio-bar" class="h-full rounded-full bg-gradient-to-r from-warn to-loss transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Artículos Críticos (Pareto 80/20) -->
+          <div class="kpi-card glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-accent-bright">
+                <i data-lucide="alert-triangle" class="h-4 w-4"></i> Críticos (80/20)
+              </div>
+              <span class="badge badge-core">Pareto</span>
+            </div>
+            <div class="mt-3 text-3xl font-bold tracking-tight text-ink-50 num-tick" id="kpi-critical">0</div>
+            <div class="mt-1 text-xs text-ink-300" id="kpi-critical-sub">concentran el 80% del loss</div>
+            <div class="mt-3 h-1 w-full overflow-hidden rounded-full bg-ink-700">
+              <div id="kpi-critical-bar" class="h-full rounded-full bg-gradient-to-r from-accent to-purple-500 transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-ink-50">Top 10 Artículos</h3>
+                <p class="text-[11px] text-ink-300">Venta vs Pérdida ($)</p>
+              </div>
+              <i data-lucide="bar-chart-3" class="h-4 w-4 text-ink-400"></i>
+            </div>
+            <div class="chart-wrap mt-4" style="height:300px;"><canvas id="chart-top10"></canvas></div>
+          </div>
+
+          <div class="glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-ink-50">Distribución de Pérdidas</h3>
+                <p class="text-[11px] text-ink-300">Por categoría inferida</p>
+              </div>
+              <i data-lucide="pie-chart" class="h-4 w-4 text-ink-400"></i>
+            </div>
+            <div class="chart-wrap mt-4" style="height:300px;"><canvas id="chart-dept"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-ink-50">Pareto de Fuga</h3>
+                <p class="text-[11px] text-ink-300">Barras (Loss) + Línea (% acumulado)</p>
+              </div>
+              <i data-lucide="git-commit-vertical" class="h-4 w-4 text-ink-400"></i>
+            </div>
+            <div class="chart-wrap mt-4" style="height:320px;"><canvas id="chart-pareto"></canvas></div>
+          </div>
+
+          <div class="glass-card rounded-xl p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-ink-50">Sobrestock vs Pérdida</h3>
+                <p class="text-[11px] text-ink-300">Scatter: Inventario OH (X) vs Loss $ (Y)</p>
+              </div>
+              <i data-lucide="scatter-chart" class="h-4 w-4 text-ink-400"></i>
+            </div>
+            <div class="chart-wrap mt-4" style="height:320px;"><canvas id="chart-scatter"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MODULE: ANALYSIS ============ -->
+      <section id="module-analysis" class="module-view hidden">
+        <div class="glass-card rounded-xl overflow-hidden">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap items-center gap-3 border-b border-ink-650 px-5 py-3">
+            <div class="relative flex-1 min-w-[240px]">
+              <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400"></i>
+              <input id="table-search" type="text" placeholder="Filtrar en tabla..."
+                     class="w-full rounded-lg border border-ink-650 bg-ink-850 py-2 pl-9 pr-4 text-sm text-ink-50 placeholder-ink-400 focus:border-accent transition-colors">
+            </div>
+            <div class="flex items-center gap-2 text-xs text-ink-300">
+              <span id="table-count">0 artículos</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="export-csv" class="inline-flex items-center gap-1.5 rounded-lg border border-ink-650 bg-ink-850 px-3 py-1.5 text-xs font-medium text-ink-200 hover:bg-ink-800 transition-colors">
+                <i data-lucide="download" class="h-3.5 w-3.5"></i> CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-scroll">
+            <table class="data-table w-full text-sm">
+              <thead>
+                <tr>
+                  <th data-sort="desc" class="cursor-pointer px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-300">Artículo</th>
+                  <th data-sort="dept" class="cursor-pointer px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-300">Categoría</th>
+                  <th data-sort="loss" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">$T+D</th>
+                  <th data-sort="sales" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">$Venta</th>
+                  <th data-sort="ratio" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">%T+D</th>
+                  <th data-sort="oh" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">OH</th>
+                  <th data-sort="ddv" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">DDV</th>
+                  <th data-sort="partvta" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">%Part Vta</th>
+                  <th data-sort="pzapct" class="cursor-pointer px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">%Pza T+D</th>
+                  <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-ink-300">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <!-- rows injected -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between border-t border-ink-650 px-5 py-3 text-xs text-ink-300">
+            <div id="pagination-info">Página 1 de 1</div>
+            <div class="flex items-center gap-1">
+              <button id="page-prev" class="rounded-md border border-ink-650 bg-ink-850 p-1.5 text-ink-200 hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <i data-lucide="chevron-left" class="h-4 w-4"></i>
+              </button>
+              <span id="page-indicator" class="px-3 font-mono">1</span>
+              <button id="page-next" class="rounded-md border border-ink-650 bg-ink-850 p-1.5 text-ink-200 hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <i data-lucide="chevron-right" class="h-4 w-4"></i>
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>Filas:</span>
+              <select id="page-size" class="rounded-md border border-ink-650 bg-ink-850 py-1 px-2 text-ink-50">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MODULE: ACTIONS ============ -->
+      <section id="module-actions" class="module-view hidden">
+        <!-- Engine status banner -->
+        <div class="mb-4 glass-card rounded-xl p-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="brain-circuit" class="h-5 w-5 text-accent-bright"></i>
+              <div>
+                <div class="text-sm font-semibold text-ink-50">Motor de Diagnóstico IA</div>
+                <div class="text-[11px] text-ink-300">Reglas heurísticas aplicadas en tiempo real · progreso guardado en LocalStorage</div>
+              </div>
+            </div>
+            <div class="ml-auto flex flex-wrap items-center gap-2">
+              <span class="badge badge-critical">Merma Total <span id="cnt-critical" class="ml-1">0</span></span>
+              <span class="badge badge-overstock">Sobrestock <span id="cnt-overstock" class="ml-1">0</span></span>
+              <span class="badge badge-core">Core Sangrando <span id="cnt-core" class="ml-1">0</span></span>
+              <span class="badge badge-ghost">Fantasma <span id="cnt-ghost" class="ml-1">0</span></span>
+            </div>
+          </div>
+          <!-- Progress bar -->
+          <div class="mt-3">
+            <div class="flex items-center justify-between text-[11px] text-ink-300">
+              <span>Progreso global de acciones</span>
+              <span id="progress-label">0 / 0</span>
+            </div>
+            <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700">
+              <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-sales to-sales-bright transition-all duration-500" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action table -->
+        <div class="glass-card rounded-xl overflow-hidden">
+          <div class="flex items-center justify-between border-b border-ink-650 px-5 py-3">
+            <div class="flex items-center gap-3">
+              <h3 class="text-sm font-semibold text-ink-50">Plan de Acciones por Artículo</h3>
+              <span id="action-count" class="text-xs text-ink-300">0 artículos diagnosticados</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="action-filter" class="rounded-md border border-ink-650 bg-ink-850 py-1.5 px-2 text-xs text-ink-50">
+                <option value="all">Todas las prioridades</option>
+                <option value="critical">Merma Total</option>
+                <option value="overstock">Sobrestock</option>
+                <option value="core">Core Sangrando</option>
+                <option value="ghost">Fantasma</option>
+                <option value="watch">Vigilar</option>
+                <option value="healthy">Saludable</option>
+              </select>
+              <button id="reset-progress" class="inline-flex items-center gap-1.5 rounded-md border border-ink-650 bg-ink-850 px-2.5 py-1.5 text-xs font-medium text-ink-200 hover:bg-ink-800 transition-colors">
+                <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i> Reset
+              </button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table w-full text-sm">
+              <thead>
+                <tr>
+                  <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-300 w-8"></th>
+                  <th data-sort="desc" class="cursor-pointer px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-300">Artículo</th>
+                  <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-300">Diagnóstico</th>
+                  <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">Loss</th>
+                  <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">OH</th>
+                  <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-ink-300">%Pza T+D</th>
+                  <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-ink-300">Progreso</th>
+                </tr>
+              </thead>
+              <tbody id="action-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+<!-- ============================================================
+     APP LOGIC
+     ============================================================ -->
+<script>
+/* ============================================================
+   1. STATE & CONSTANTS
+   ============================================================ */
+const STATE = {
+  rawRows: [],          // cleaned rows from Excel
+  filteredRows: [],     // after applying search + dept filter
+  activeModule: 'dashboard',
+  deptFilter: 'all',
+  searchTerm: '',
+  tableSearch: '',
+  sortBy: 'loss',
+  sortDir: 'desc',
+  page: 1,
+  pageSize: 50,
+  actionFilter: 'all',
+  charts: {},           // Chart.js instances
+  expandedRows: new Set(),
+};
+
+const LS_KEY = 'lap_action_progress_v1';  // LocalStorage key
+
+/* Category heuristics — since the source file has no DEPTO column,
+   we infer category from product name keywords. */
+const CATEGORY_RULES = [
+  { name: 'Carnes',      color: '#ef4444', keywords: ['CARNE','RES','POLLO','CERDO','COSTILLA','MILANESA','PECHUGA','PATA','PANZA','DESHEBRADA','CHULETA','SALCHICHA','JAMON','TOCINO','HAMBURGUESA','ALBONDIGA','MARINADO'] },
+  { name: 'Panadería',   color: '#f59e0b', keywords: ['PAN','BOLILLO','DONAS','DONUT','PASTEL','ROSCA','BISCUIT','CONCHA','EMPANADA','DULCE','TORTILLA','BIZCOCHO','REPOSTERIA','PANQUE','MUFFIN','CAJETA','SELVA','AMERICANO','MOKACCIN','PIZZA'] },
+  { name: 'Frutas',      color: '#10b981', keywords: ['MANGO','NARANJA','LIMON','UVA','MANZANA','PLATANO','FRESA','SANDIA','MELON','PAPAYA','PIÑA','PERA','DURAZNO','CIRUELA','AGUACATE','TUNA','GUAYABA','TORONJA','MANDARINA','GRANEL'] },
+  { name: 'Verduras',    color: '#22c55e', keywords: ['PAPA','ZANAHORIA','TOMATE','CEBOLLA','CHILE','PEPINO','LECHUGA','APIO','COL','BROCOLI','CALABAZA','CHAYOTE','ELOTE','NOPAL','ESPINACA','VERDE','JUGO','HORTALIZA','CHILES','POBLANO'] },
+  { name: 'Lácteos',     color: '#3b82f6', keywords: ['LECHE','QUESO','YOGURT','CREMA','MANTEQUILLA','MARQUETA','LACTEO','YOGUR','JOCOQUE','REQUESON'] },
+  { name: 'Higiene',     color: '#a855f7', keywords: ['JABON','SHAMPOO','PAPEL','SERVILLETA','SUAVIZANTE','DETERGENTE','LIMPIADOR','CLORO','DESINFECTANTE'] },
+  { name: 'Bebidas',     color: '#06b6d4', keywords: ['REFRESCO','SODA','JUGO','AGUA','TE','CAFE','CERVEZA','VINO','ENERGIZANTE','ATORANTE'] },
+  { name: 'Congelados',  color: '#0ea5e9', keywords: ['CONGELADO','HELADO','PALETA','NIEVE','PULPA'] },
+  { name: 'Otros',       color: '#71717a', keywords: [] },
+];
+
+/* ============================================================
+   2. PARSER — robust number/string cleaning
+   ============================================================ */
+function parseNum(val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (typeof val === 'number') return isFinite(val) ? val : null;
+  if (typeof val === 'string') {
+    const s = val.trim();
+    if (!s) return null;
+    if (s.toLowerCase() === 'infinity' || s === '*' || s === '-' || s === 'N/A') return null;
+    // Remove currency, thousands separators, spaces
+    let cleaned = s.replace(/[$\s]/g, '').replace(/,/g, '');
+    // Handle "1,5" → "1.5" if there is a single comma as decimal sep
+    // Heuristic: if no dot and one comma → decimal comma
+    if (!cleaned.includes('.') && cleaned.includes(',')) {
+      const parts = cleaned.split(',');
+      if (parts.length === 2 && parts[1].length <= 2) {
+        cleaned = parts[0] + '.' + parts[1];
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    }
+    const n = parseFloat(cleaned);
+    return isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function inferCategory(desc) {
+  if (!desc) return 'Otros';
+  const upper = desc.toUpperCase();
+  for (const rule of CATEGORY_RULES) {
+    if (rule.keywords.some(kw => upper.includes(kw))) return rule.name;
+  }
+  return 'Otros';
+}
+
+function getCategoryColor(cat) {
+  const r = CATEGORY_RULES.find(r => r.name === cat);
+  return r ? r.color : '#71717a';
+}
+
+/* Parse the workbook into cleaned rows */
+function parseWorkbook(wb) {
+  const sheetName = wb.SheetNames.includes('Export') ? 'Export' : wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const json = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: null });
+
+  if (!json.length) throw new Error('Hoja vacía');
+
+  // Normalize headers (strip whitespace, lowercase compare)
+  const rawHeaders = json[0].map(h => (h || '').toString().trim());
+  const headerMap = {};
+  rawHeaders.forEach((h, i) => {
+    const key = h.toUpperCase().replace(/\s+/g, '').replace(/\$/g, '').replace(/\+/g, 'T').replace(/%/g, 'PCT');
+    headerMap[key] = i;
+  });
+
+  // Find column indexes by possible aliases
+  const colIdx = {
+    desc:   headerMap['DESCUNIFICADA'] ?? 0,
+    pctTd:  headerMap['PCTT'] ?? headerMap['PCTTD'] ?? 1,
+    loss:   headerMap['TTD'] ?? headerMap['TD'] ?? 2,
+    sales:  headerMap['VENTA'] ?? 3,
+    partVta:headerMap['PARTVTA'] ?? headerMap['PART'] ?? 4,
+    ddv:    headerMap['DDV'] ?? 5,
+    oh:     headerMap['OHT'] ?? headerMap['OH'] ?? 6,
+    transito: headerMap['TRANSITO'] ?? 7,
+    pzaTd:  headerMap['PZATD'] ?? 8,
+    pzaVta: headerMap['PZAVTA'] ?? 9,
+    pzaProd:headerMap['PZAPROD'] ?? 10,
+    pzaPctTd: headerMap['PZAPCTTD'] ?? headerMap['PCTPZATD'] ?? 11,
+  };
+
+  const rows = [];
+  for (let i = 1; i < json.length; i++) {
+    const r = json[i];
+    if (!r || !r.length) continue;
+    const desc = (r[colIdx.desc] || '').toString().trim();
+    if (!desc) continue;
+    // Skip total/aggregate rows
+    if (desc.toUpperCase() === 'TOTAL' || desc.toUpperCase().startsWith('FILTROS')) continue;
+    if (desc.toUpperCase().startsWith('TOTAL ')) continue;
+
+    const loss   = parseNum(r[colIdx.loss]);
+    const sales  = parseNum(r[colIdx.sales]);
+    const oh     = parseNum(r[colIdx.oh]);
+    const ddv    = parseNum(r[colIdx.ddv]);
+    const partVta= parseNum(r[colIdx.partVta]);
+    const pctTd  = parseNum(r[colIdx.pctTd]);
+    const pzaPctTd = parseNum(r[colIdx.pzaPctTd]);
+    const pzaTd  = parseNum(r[colIdx.pzaTd]);
+    const pzaVta = parseNum(r[colIdx.pzaVta]);
+    const pzaProd= parseNum(r[colIdx.pzaProd]);
+
+    rows.push({
+      desc,
+      category: inferCategory(desc),
+      dept: inferCategory(desc),  // alias used in filters / charts
+      loss:   loss   ?? 0,
+      sales:  sales  ?? 0,
+      oh:     oh     ?? 0,
+      ddv:    ddv    ?? 0,
+      partVta: partVta ?? 0,
+      pctTd:  pctTd  ?? 0,
+      pzaPctTd: pzaPctTd ?? 0,
+      pzaTd:  pzaTd  ?? 0,
+      pzaVta: pzaVta ?? 0,
+      pzaProd: pzaProd ?? 0,
+    });
+  }
+  return rows;
+}
+
+/* ============================================================
+   3. AI DIAGNOSIS ENGINE
+   ============================================================ */
+function diagnose(row) {
+  const d = row;
+  // Priority order matters — most severe first
+  if (d.pzaPctTd >= 0.99) {
+    return {
+      key: 'critical', label: 'Merma Total', badge: 'badge-critical',
+      icon: 'flame', color: '#ef4444',
+      diagnosis: `El ${pct(d.pzaPctTd)} de las piezas se perdieron. La merma es prácticamente total: el artículo ya no es recuperable en este ciclo.`,
+      actions: [
+        'Suspender próxima orden de compra inmediatamente',
+        'Auditar físicamente el inventario restante en piso y bodega',
+        'Dar de baja en ERP / sistema central y conciliar con finanzas',
+        'Investigar causa raíz: caducidad, robo, daño en tránsito',
+      ],
+    };
+  }
+  if (d.oh > 50 && d.ddv > 5) {
+    return {
+      key: 'overstock', label: 'Sobrestock', badge: 'badge-overstock',
+      icon: 'package', color: '#f59e0b',
+      diagnosis: `Inventario en mano de ${num(d.oh)} unidades con ${num(d.ddv,1)} días de cobertura. Capital inmovilizado con alto riesgo de obsolescencia.`,
+      actions: [
+        'Congelar órdenes de compra abiertas para este SKU',
+        'Activar promoción o descuento para acelerar rotación',
+        'Revisar política FIFO — verificar fechas de caducidad en piso',
+        'Negociar devolución con proveedor si aplica',
+      ],
+    };
+  }
+  if (d.partVta > 0.005 && d.loss > 100) {
+    return {
+      key: 'core', label: 'Producto Core Sangrando', badge: 'badge-core',
+      icon: 'droplet', color: '#a855f7',
+      diagnosis: `Artículo de alta rotación (${pct(d.partVta)} de participación) con pérdida significativa ($${num(d.loss,2)}). Impacto directo en margen.`,
+      actions: [
+        'Auditar cadena de frío / almacenamiento si aplica',
+        'Capacitar al personal sobre manipulación y exhibición',
+        'Revisar parámetros de pedido del sistema (min/max)',
+        'Implementar conteo cíclico diario por 7 días',
+      ],
+    };
+  }
+  if (d.oh === 0 && d.sales === 0 && d.loss > 0) {
+    return {
+      key: 'ghost', label: 'Inventario Fantasma', badge: 'badge-ghost',
+      icon: 'ghost', color: '#6b7280',
+      diagnosis: `Sin inventario físico ni ventas, pero se registra pérdida de $${num(d.loss,2)}. Inconsistencia entre sistema y realidad.`,
+      actions: [
+        'Realizar ajuste de sistema para cuadrar inventario',
+        'Investigar posible robo o pérdida no documentada',
+        'Revisar última recepción y movimientos de inventario',
+        'Notificar a auditoría interna para investigación',
+      ],
+    };
+  }
+  // Default — watch / healthy
+  if (d.loss > 0 && d.pctTd > 0.05) {
+    return {
+      key: 'watch', label: 'Vigilar', badge: 'badge-watch',
+      icon: 'eye', color: '#3b82f6',
+      diagnosis: `Pérdida de $${num(d.loss,2)} (${pct(d.pctTd)} de la venta). Monitorear tendencia; aplicar acciones estándar de control.`,
+      actions: [
+        'Monitorear evolución semanal de la merma',
+        'Verificar procesos de recepción y exhibición',
+        'Refuerzo de FIFO en exhibición',
+      ],
+    };
+  }
+  return {
+    key: 'healthy', label: 'Saludable', badge: 'badge-healthy',
+    icon: 'check-circle', color: '#10b981',
+    diagnosis: `Métricas dentro de parámetros aceptables. Sin acciones urgentes requeridas.`,
+    actions: [
+      'Mantener monitoreo regular',
+      'Documentar buenas prácticas actuales',
+    ],
+  };
+}
+
+/* ============================================================
+   4. FORMATTERS
+   ============================================================ */
+function num(n, decimals = 0) {
+  if (n === null || n === undefined || !isFinite(n)) return '0';
+  return n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function money(n) {
+  if (n === null || n === undefined || !isFinite(n)) return '$0';
+  return '$' + num(n, 2);
+}
+function pct(n) {
+  if (n === null || n === undefined || !isFinite(n)) return '0.00%';
+  // If value is already in 0-1 range multiply by 100
+  const v = Math.abs(n) <= 1 ? n * 100 : n;
+  return v.toFixed(2) + '%';
+}
+
+/* ============================================================
+   5. UI RENDERING
+   ============================================================ */
+
+/* Animate a number from 0 to target */
+function animateNumber(el, target, formatter, duration = 900) {
+  if (!el) return;
+  const start = 0;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = start + (target - start) * eased;
+    el.textContent = formatter(val);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = formatter(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* Toast */
+function toast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const colors = {
+    info:    'border-accent/40 bg-accent/10 text-accent-bright',
+    success: 'border-sales/40 bg-sales/10 text-sales-bright',
+    error:   'border-loss/40 bg-loss/10 text-loss-bright',
+    warning: 'border-warn/40 bg-warn/10 text-warn-bright',
+  };
+  const icons = { info: 'info', success: 'check-circle', error: 'alert-octagon', warning: 'alert-triangle' };
+  const el = document.createElement('div');
+  el.className = `toast flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur-md ${colors[type] || colors.info}`;
+  el.innerHTML = `<i data-lucide="${icons[type] || icons.info}" class="h-4 w-4"></i><span>${message}</span>`;
+  container.appendChild(el);
+  lucide.createIcons();
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s, transform 0.3s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+/* Filter rows by current state */
+function applyFilters() {
+  STATE.filteredRows = STATE.rawRows.filter(r => {
+    // Department / category filter
+    if (STATE.deptFilter !== 'all' && r.category !== STATE.deptFilter) return false;
+    // Global search (header)
+    if (STATE.searchTerm) {
+      const q = STATE.searchTerm.toLowerCase();
+      if (!r.desc.toLowerCase().includes(q) && !r.category.toLowerCase().includes(q)) return false;
+    }
+    // Table-local search
+    if (STATE.tableSearch) {
+      const q = STATE.tableSearch.toLowerCase();
+      if (!r.desc.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  // Sort
+  const { sortBy, sortDir } = STATE;
+  STATE.filteredRows.sort((a, b) => {
+    let av, bv;
+    switch (sortBy) {
+      case 'desc': av = a.desc; bv = b.desc; break;
+      case 'dept': av = a.category; bv = b.category; break;
+      case 'loss': av = a.loss; bv = b.loss; break;
+      case 'sales': av = a.sales; bv = b.sales; break;
+      case 'ratio': av = a.pctTd; bv = b.pctTd; break;
+      case 'oh': av = a.oh; bv = b.oh; break;
+      case 'ddv': av = a.ddv; bv = b.ddv; break;
+      case 'partvta': av = a.partVta; bv = b.partVta; break;
+      case 'pzapct': av = a.pzaPctTd; bv = b.pzaPctTd; break;
+      default: av = a.loss; bv = b.loss;
+    }
+    if (typeof av === 'string') {
+      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
+}
+
+/* Populate dept filter dropdown */
+function populateDeptFilter() {
+  const sel = document.getElementById('dept-filter');
+  const cats = [...new Set(STATE.rawRows.map(r => r.category))].sort();
+  sel.innerHTML = '<option value="all">Todas</option>';
+  cats.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+/* ============================================================
+   6. DASHBOARD RENDER
+   ============================================================ */
+function renderDashboard() {
+  const rows = STATE.filteredRows.length ? STATE.filteredRows : STATE.rawRows;
+  const totalLoss = rows.reduce((s, r) => s + r.loss, 0);
+  const totalSales = rows.reduce((s, r) => s + r.sales, 0);
+  const lossRatio = totalSales > 0 ? totalLoss / totalSales : 0;
+  const itemsWithLoss = rows.filter(r => r.loss > 0).length;
+
+  // Pareto 80/20 — sorted by loss desc, find count that sums 80% of total loss
+  const sortedByLoss = [...rows].filter(r => r.loss > 0).sort((a, b) => b.loss - a.loss);
+  let cum = 0, criticalCount = 0;
+  for (const r of sortedByLoss) {
+    cum += r.loss;
+    criticalCount++;
+    if (cum >= totalLoss * 0.8) break;
+  }
+
+  // Animate KPIs
+  animateNumber(document.getElementById('kpi-loss'), totalLoss, money);
+  animateNumber(document.getElementById('kpi-sales'), totalSales, money);
+  animateNumber(document.getElementById('kpi-ratio'), lossRatio * 100, v => v.toFixed(2) + '%');
+  animateNumber(document.getElementById('kpi-critical'), criticalCount, v => Math.round(v).toString());
+
+  document.getElementById('kpi-loss-sub').textContent = `${itemsWithLoss} artículos con fuga`;
+  document.getElementById('kpi-sales-sub').textContent = `${rows.length} artículos en catálogo`;
+  document.getElementById('kpi-ratio-sub').textContent = lossRatio > 0.05 ? '⚠ Por encima del umbral 5%' : 'Dentro de umbral aceptable';
+  document.getElementById('kpi-critical-sub').textContent = `${(criticalCount / Math.max(rows.length, 1) * 100).toFixed(1)}% del catálogo`;
+
+  // KPI progress bars
+  setTimeout(() => {
+    document.getElementById('kpi-loss-bar').style.width = Math.min(100, totalLoss / Math.max(totalSales, 1) * 100 * 4) + '%';
+    document.getElementById('kpi-sales-bar').style.width = Math.min(100, totalSales / 200000 * 100) + '%';
+    document.getElementById('kpi-ratio-bar').style.width = Math.min(100, lossRatio * 100 * 8) + '%';
+    document.getElementById('kpi-critical-bar').style.width = Math.min(100, criticalCount / Math.max(rows.length, 1) * 100 * 2) + '%';
+  }, 50);
+
+  // === CHART: Top 10 — Venta vs Pérdida (grouped bar) ===
+  const top10 = [...rows].sort((a, b) => b.loss - a.loss).slice(0, 10);
+  renderTop10Chart(top10);
+
+  // === CHART: Distribución por categoría (doughnut) ===
+  renderDeptChart(rows);
+
+  // === CHART: Pareto (bar + line) ===
+  renderParetoChart(sortedByLoss.slice(0, 15), totalLoss);
+
+  // === CHART: Scatter OH vs Loss ===
+  renderScatterChart(rows);
+}
+
+function chartBaseOptions(extra = {}) {
+  return Object.assign({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: '#a1a1aa', font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8 },
+        position: 'top',
+      },
+      tooltip: {
+        backgroundColor: '#18181b',
+        borderColor: '#3f3f46',
+        borderWidth: 1,
+        titleColor: '#f4f4f5',
+        bodyColor: '#d4d4d8',
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { family: 'Inter', weight: '600' },
+        bodyFont: { family: 'Inter' },
+      },
+    },
+    scales: {
+      x: { ticks: { color: '#71717a', font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(39,39,42,0.5)' } },
+      y: { ticks: { color: '#71717a', font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(39,39,42,0.5)' } },
+    },
+  }, extra);
+}
+
+function destroyChart(key) {
+  if (STATE.charts[key]) { STATE.charts[key].destroy(); delete STATE.charts[key]; }
+}
+
+function renderTop10Chart(data) {
+  destroyChart('top10');
+  const ctx = document.getElementById('chart-top10').getContext('2d');
+  STATE.charts.top10 = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(r => r.desc.length > 18 ? r.desc.slice(0, 16) + '…' : r.desc),
+      datasets: [
+        { label: 'Venta $', data: data.map(r => r.sales), backgroundColor: 'rgba(16,185,129,0.7)', borderColor: '#10b981', borderWidth: 1, borderRadius: 4 },
+        { label: 'Pérdida $', data: data.map(r => r.loss), backgroundColor: 'rgba(239,68,68,0.7)', borderColor: '#ef4444', borderWidth: 1, borderRadius: 4 },
+      ],
+    },
+    options: chartBaseOptions({
+      plugins: { legend: { labels: { color: '#a1a1aa', font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8 }, position: 'top' },
+        tooltip: { backgroundColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, titleColor: '#f4f4f5', bodyColor: '#d4d4d8', padding: 10, cornerRadius: 8 } },
+      scales: {
+        x: { ticks: { color: '#71717a', font: { family: 'Inter', size: 9 }, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+        y: { ticks: { color: '#71717a', font: { family: 'Inter', size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v) }, grid: { color: 'rgba(39,39,42,0.5)' } },
+      },
+    }),
+  });
+}
+
+function renderDeptChart(rows) {
+  destroyChart('dept');
+  const ctx = document.getElementById('chart-dept').getContext('2d');
+  const byCat = {};
+  rows.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + r.loss; });
+  const labels = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+  const data = labels.map(l => byCat[l]);
+  const colors = labels.map(l => getCategoryColor(l));
+  STATE.charts.dept = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#0f0f14', borderWidth: 2, hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'right', labels: { color: '#a1a1aa', font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8, padding: 10 } },
+        tooltip: {
+          backgroundColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, titleColor: '#f4f4f5', bodyColor: '#d4d4d8', padding: 10, cornerRadius: 8,
+          callbacks: { label: ctx => ` ${ctx.label}: ${money(ctx.raw)} (${(ctx.raw / data.reduce((a,b)=>a+b,0) * 100).toFixed(1)}%)` },
+        },
+      },
+    },
+  });
+}
+
+function renderParetoChart(data, totalLoss) {
+  destroyChart('pareto');
+  const ctx = document.getElementById('chart-pareto').getContext('2d');
+  const labels = data.map(r => r.desc.length > 16 ? r.desc.slice(0, 14) + '…' : r.desc);
+  const losses = data.map(r => r.loss);
+  let cum = 0;
+  const cumulative = losses.map(l => { cum += l; return (cum / totalLoss) * 100; });
+
+  STATE.charts.pareto = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: 'Pérdida $', data: losses, backgroundColor: 'rgba(239,68,68,0.65)', borderColor: '#ef4444', borderWidth: 1, borderRadius: 4, yAxisID: 'y' },
+        { type: 'line', label: '% Acumulado', data: cumulative, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', borderWidth: 2, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#3b82f6', fill: true, yAxisID: 'y1' },
+      ],
+    },
+    options: chartBaseOptions({
+      plugins: {
+        legend: { labels: { color: '#a1a1aa', font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8 } },
+        tooltip: { backgroundColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, titleColor: '#f4f4f5', bodyColor: '#d4d4d8', padding: 10, cornerRadius: 8 },
+      },
+      scales: {
+        x: { ticks: { color: '#71717a', font: { family: 'Inter', size: 9 }, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+        y:  { type: 'linear', position: 'left',  ticks: { color: '#ef4444', font: { family: 'Inter', size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v) }, grid: { color: 'rgba(39,39,42,0.5)' }, title: { display: true, text: 'Pérdida $', color: '#ef4444', font: { size: 10 } } },
+        y1: { type: 'linear', position: 'right', ticks: { color: '#3b82f6', font: { family: 'Inter', size: 10 }, callback: v => v.toFixed(0) + '%' }, grid: { display: false }, min: 0, max: 100, title: { display: true, text: '% Acum', color: '#3b82f6', font: { size: 10 } } },
+      },
+    }),
+  });
+}
+
+function renderScatterChart(rows) {
+  destroyChart('scatter');
+  const ctx = document.getElementById('chart-scatter').getContext('2d');
+  // Color points by diagnosis
+  const points = rows.filter(r => r.oh > 0 || r.loss > 0).map(r => {
+    const d = diagnose(r);
+    return { x: r.oh, y: r.loss, name: r.desc, color: d.color };
+  });
+  // Group by color for multiple datasets
+  const groups = {};
+  points.forEach(p => {
+    if (!groups[p.color]) groups[p.color] = [];
+    groups[p.color].push(p);
+  });
+  const datasets = Object.entries(groups).map(([color, pts]) => ({
+    label: color === '#ef4444' ? 'Crítico' : color === '#f59e0b' ? 'Sobrestock' : color === '#a855f7' ? 'Core' : color === '#6b7280' ? 'Fantasma' : color === '#10b981' ? 'Saludable' : 'Vigilar',
+    data: pts,
+    backgroundColor: color + 'CC',
+    borderColor: color,
+    borderWidth: 1,
+    pointRadius: 4,
+    pointHoverRadius: 7,
+  }));
+  STATE.charts.scatter = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: chartBaseOptions({
+      plugins: {
+        legend: { labels: { color: '#a1a1aa', font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8 } },
+        tooltip: {
+          backgroundColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, titleColor: '#f4f4f5', bodyColor: '#d4d4d8', padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: ctx => ctx[0].raw.name,
+            label: ctx => ` OH: ${num(ctx.raw.x)} · Loss: ${money(ctx.raw.y)}`,
+          },
+        },
+      },
+      scales: {
+        x: { type: 'logarithmic', title: { display: true, text: 'Inventario OH (log)', color: '#71717a', font: { size: 10 } }, ticks: { color: '#71717a', font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(39,39,42,0.5)' } },
+        y: { type: 'logarithmic', title: { display: true, text: 'Pérdida $ (log)', color: '#71717a', font: { size: 10 } }, ticks: { color: '#71717a', font: { family: 'Inter', size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v) }, grid: { color: 'rgba(39,39,42,0.5)' } },
+      },
+    }),
+  });
+}
+
+/* ============================================================
+   7. DATA TABLE RENDER
+   ============================================================ */
+function renderTable() {
+  const body = document.getElementById('table-body');
+  const rows = STATE.filteredRows;
+  const start = (STATE.page - 1) * STATE.pageSize;
+  const end = start + STATE.pageSize;
+  const pageRows = rows.slice(start, end);
+
+  document.getElementById('table-count').textContent = `${rows.length} artículos`;
+  document.getElementById('pagination-info').textContent = `Mostrando ${pageRows.length === 0 ? 0 : start + 1}–${start + pageRows.length} de ${rows.length}`;
+  const totalPages = Math.max(1, Math.ceil(rows.length / STATE.pageSize));
+  document.getElementById('page-indicator').textContent = `${STATE.page} / ${totalPages}`;
+  document.getElementById('page-prev').disabled = STATE.page <= 1;
+  document.getElementById('page-next').disabled = STATE.page >= totalPages;
+
+  if (!pageRows.length) {
+    body.innerHTML = `<tr><td colspan="10" class="px-4 py-12 text-center text-sm text-ink-300">No se encontraron artículos con los filtros actuales.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = pageRows.map(r => {
+    const d = diagnose(r);
+    return `
+      <tr class="animate-fade-in">
+        <td class="px-4 py-2.5 text-sm font-medium text-ink-50 max-w-[260px] truncate" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
+        <td class="px-4 py-2.5"><span class="inline-flex items-center gap-1.5 text-xs text-ink-200"><span class="h-2 w-2 rounded-full" style="background:${getCategoryColor(r.category)}"></span>${r.category}</span></td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm ${r.loss > 0 ? 'text-loss-bright' : 'text-ink-400'}">${money(r.loss)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm text-sales-bright">${money(r.sales)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-xs text-ink-200">${pct(r.pctTd)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm text-ink-100">${num(r.oh)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm ${r.ddv > 14 ? 'text-warn-bright' : 'text-ink-200'}">${num(r.ddv, 1)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-xs text-ink-200">${pct(r.partVta)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-xs ${r.pzaPctTd > 0.2 ? 'text-loss-bright' : 'text-ink-200'}">${pct(r.pzaPctTd)}</td>
+        <td class="px-4 py-2.5 text-center"><span class="badge ${d.badge}">${d.label}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  // Sort indicators
+  document.querySelectorAll('.data-table thead th[data-sort]').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === STATE.sortBy) {
+      th.classList.add(STATE.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   8. ACTION ENGINE RENDER
+   ============================================================ */
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveProgress(p) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch {}
+}
+
+function renderActionTable() {
+  const body = document.getElementById('action-table-body');
+  let rows = STATE.filteredRows.length ? STATE.filteredRows : STATE.rawRows;
+
+  // Sort by loss desc so most severe appear first
+  rows = [...rows].sort((a, b) => b.loss - a.loss);
+
+  // Apply action filter
+  if (STATE.actionFilter !== 'all') {
+    rows = rows.filter(r => diagnose(r).key === STATE.actionFilter);
+  }
+
+  // Update counts
+  const all = STATE.rawRows;
+  const counts = { critical: 0, overstock: 0, core: 0, ghost: 0 };
+  all.forEach(r => {
+    const k = diagnose(r).key;
+    if (counts[k] !== undefined) counts[k]++;
+  });
+  document.getElementById('cnt-critical').textContent = counts.critical;
+  document.getElementById('cnt-overstock').textContent = counts.overstock;
+  document.getElementById('cnt-core').textContent = counts.core;
+  document.getElementById('cnt-ghost').textContent = counts.ghost;
+  document.getElementById('action-count').textContent = `${rows.length} artículos diagnosticados`;
+
+  // Action badge in sidebar
+  const totalIssues = counts.critical + counts.overstock + counts.core + counts.ghost;
+  const badge = document.getElementById('action-badge');
+  if (totalIssues > 0) {
+    badge.classList.remove('hidden');
+    badge.textContent = totalIssues;
+  } else {
+    badge.classList.add('hidden');
+  }
+
+  // Global progress
+  const progress = loadProgress();
+  let totalActions = 0, doneActions = 0;
+  rows.forEach(r => {
+    const d = diagnose(r);
+    const key = r.desc;
+    if (!progress[key]) progress[key] = {};
+    d.actions.forEach((_, i) => {
+      totalActions++;
+      if (progress[key][i]) doneActions++;
+    });
+  });
+  const pctDone = totalActions ? (doneActions / totalActions) * 100 : 0;
+  document.getElementById('progress-bar').style.width = pctDone + '%';
+  document.getElementById('progress-label').textContent = `${doneActions} / ${totalActions}`;
+
+  // Render rows
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-sm text-ink-300">No hay artículos que coincidan con el filtro.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.map((r, idx) => {
+    const d = diagnose(r);
+    const key = r.desc;
+    const pState = progress[key] || {};
+    const done = d.actions.filter((_, i) => pState[i]).length;
+    const total = d.actions.length;
+    const pct = total ? (done / total) * 100 : 0;
+    const expanded = STATE.expandedRows.has(idx);
+    return `
+      <tr class="animate-fade-in ${expanded ? 'expanded' : ''}" data-row-idx="${idx}">
+        <td class="px-4 py-2.5 text-center">
+          <button class="expand-btn rounded p-1 text-ink-300 hover:text-ink-50 hover:bg-ink-700 transition-colors" data-idx="${idx}">
+            <i data-lucide="${expanded ? 'chevron-down' : 'chevron-right'}" class="h-4 w-4"></i>
+          </button>
+        </td>
+        <td class="px-4 py-2.5 text-sm font-medium text-ink-50 max-w-[280px] truncate" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
+        <td class="px-4 py-2.5"><span class="badge ${d.badge}"><i data-lucide="${d.icon}" class="h-3 w-3"></i>${d.label}</span></td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm ${r.loss > 0 ? 'text-loss-bright' : 'text-ink-400'}">${money(r.loss)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-sm text-ink-100">${num(r.oh)}</td>
+        <td class="px-4 py-2.5 text-right font-mono text-xs ${r.pzaPctTd > 0.2 ? 'text-loss-bright' : 'text-ink-200'}">${pct2(r.pzaPctTd)}</td>
+        <td class="px-4 py-2.5">
+          <div class="flex items-center gap-2 justify-center">
+            <div class="h-1.5 w-20 overflow-hidden rounded-full bg-ink-700">
+              <div class="h-full rounded-full transition-all duration-300" style="width:${pct}%; background: ${pct === 100 ? '#10b981' : 'linear-gradient(90deg,#3b82f6,#8b5cf6)'}"></div>
+            </div>
+            <span class="text-[10px] font-mono text-ink-300">${done}/${total}</span>
+          </div>
+        </td>
+      </tr>
+      ${expanded ? renderExpandedPanel(r, d, idx) : ''}
+    `;
+  }).join('');
+
+  lucide.createIcons();
+}
+
+function pct2(n) {
+  if (n === null || n === undefined || !isFinite(n)) return '0.00%';
+  const v = Math.abs(n) <= 1 ? n * 100 : n;
+  return v.toFixed(2) + '%';
+}
+
+function renderExpandedPanel(row, diag, idx) {
+  const progress = loadProgress();
+  const pState = progress[row.desc] || {};
+  return `
+    <tr class="expanded-row">
+      <td colspan="7" class="p-0">
+        <div class="expand-panel border-t border-ink-700 bg-ink-900/60 px-6 py-5">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Diagnosis -->
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="${diag.icon}" class="h-4 w-4" style="color:${diag.color}"></i>
+                <h4 class="text-xs font-semibold uppercase tracking-wider" style="color:${diag.color}">Diagnóstico IA</h4>
+              </div>
+              <p class="text-sm text-ink-100 leading-relaxed">${diag.diagnosis}</p>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div class="rounded-md bg-ink-850 px-2.5 py-1.5">
+                  <div class="text-[10px] uppercase text-ink-400">%Pza T+D</div>
+                  <div class="font-mono text-ink-100">${pct2(row.pzaPctTd)}</div>
+                </div>
+                <div class="rounded-md bg-ink-850 px-2.5 py-1.5">
+                  <div class="text-[10px] uppercase text-ink-400">DDV</div>
+                  <div class="font-mono text-ink-100">${num(row.ddv,1)} días</div>
+                </div>
+                <div class="rounded-md bg-ink-850 px-2.5 py-1.5">
+                  <div class="text-[10px] uppercase text-ink-400">%Part Vta</div>
+                  <div class="font-mono text-ink-100">${pct2(row.partVta)}</div>
+                </div>
+                <div class="rounded-md bg-ink-850 px-2.5 py-1.5">
+                  <div class="text-[10px] uppercase text-ink-400">$Venta</div>
+                  <div class="font-mono text-sales-bright">${money(row.sales)}</div>
+                </div>
+              </div>
+            </div>
+            <!-- Checklist -->
+            <div class="lg:col-span-2">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-ink-300">Check-list de Acciones</h4>
+                <span class="text-[10px] text-ink-400">Progreso guardado automáticamente</span>
+              </div>
+              <div class="space-y-2">
+                ${diag.actions.map((a, i) => `
+                  <label class="flex items-start gap-3 rounded-lg border border-ink-700 bg-ink-850 px-3 py-2.5 cursor-pointer hover:border-ink-500 transition-colors group">
+                    <input type="checkbox" class="action-checkbox mt-0.5 h-4 w-4 rounded border-ink-500 bg-ink-700 text-accent focus:ring-accent focus:ring-offset-0"
+                           data-art="${escapeHtml(row.desc)}" data-idx="${i}"
+                           ${pState[i] ? 'checked' : ''}>
+                    <div class="flex-1">
+                      <div class="text-sm text-ink-100 group-has-[:checked]:line-through group-has-[:checked]:text-ink-400 transition-all">${a}</div>
+                    </div>
+                    <i data-lucide="${pState[i] ? 'check-circle-2' : 'circle'}" class="h-4 w-4 ${pState[i] ? 'text-sales-bright' : 'text-ink-500'}"></i>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+/* ============================================================
+   9. MODULE SWITCHING
+   ============================================================ */
+function switchModule(name) {
+  STATE.activeModule = name;
+  document.querySelectorAll('.module-view').forEach(m => m.classList.add('hidden'));
+  const mod = document.getElementById('module-' + name);
+  if (mod) {
+    mod.classList.remove('hidden');
+    // Re-trigger animation
+    mod.style.animation = 'none';
+    mod.offsetHeight;  // force reflow
+    mod.style.animation = '';
+  }
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-module="${name}"]`)?.classList.add('active');
+
+  const titles = {
+    dashboard: ['Dashboard Ejecutivo', 'Visión consolidada de mermas y fugas de inventario'],
+    analysis:  ['Análisis de Datos', 'Tabla profesional con búsqueda, ordenamiento y badges de estado'],
+    actions:   ['Motor de Acciones', 'Diagnóstico IA y check-list persistente por artículo'],
+  };
+  if (titles[name]) {
+    document.getElementById('page-title').textContent = titles[name][0];
+    document.getElementById('page-subtitle').textContent = titles[name][1];
+  }
+
+  // Render module-specific content
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'analysis')  renderTable();
+  if (name === 'actions')   renderActionTable();
+
+  lucide.createIcons();
+}
+
+/* ============================================================
+   10. FILE HANDLING
+   ============================================================ */
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.(xlsx|xls)$/i)) {
+    toast('Por favor carga un archivo .xlsx o .xls', 'error');
+    return;
+  }
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('skeleton-state').classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const rows = parseWorkbook(wb);
+      if (!rows.length) throw new Error('No se encontraron filas válidas en la hoja.');
+
+      STATE.rawRows = rows;
+      populateDeptFilter();
+      applyFilters();
+
+      // Update dataset status
+      const status = document.getElementById('dataset-status');
+      status.innerHTML = `<span class="h-2 w-2 rounded-full bg-sales-bright animate-pulse"></span><span class="text-xs text-ink-100">${rows.length} artículos cargados</span>`;
+      const meta = document.getElementById('dataset-meta');
+      meta.classList.remove('hidden');
+      const totalLoss = rows.reduce((s,r)=>s+r.loss,0);
+      meta.textContent = `${money(totalLoss)} en merma · ${rows.filter(r=>r.loss>0).length} con fuga`;
+
+      document.getElementById('skeleton-state').classList.add('hidden');
+      switchModule('dashboard');
+
+      toast(`Archivo cargado: ${rows.length} artículos procesados`, 'success');
+    } catch (err) {
+      console.error(err);
+      document.getElementById('skeleton-state').classList.add('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+      toast('Error al procesar el archivo: ' + err.message, 'error');
+    }
+  };
+  reader.onerror = () => {
+    document.getElementById('skeleton-state').classList.add('hidden');
+    document.getElementById('empty-state').classList.remove('hidden');
+    toast('No se pudo leer el archivo', 'error');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ============================================================
+   11. CSV EXPORT
+   ============================================================ */
+function exportCSV() {
+  const rows = STATE.filteredRows;
+  if (!rows.length) { toast('No hay datos para exportar', 'warning'); return; }
+  const headers = ['Artículo','Categoría','$T+D','$Venta','%T+D','OH','DDV','%Part Vta','%Pza T+D','Estado'];
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    const d = diagnose(r);
+    lines.push([
+      `"${r.desc.replace(/"/g,'""')}"`,
+      r.category,
+      r.loss.toFixed(2),
+      r.sales.toFixed(2),
+      (r.pctTd*100).toFixed(2)+'%',
+      r.oh,
+      r.ddv.toFixed(2),
+      (r.partVta*100).toFixed(4)+'%',
+      (r.pzaPctTd*100).toFixed(2)+'%',
+      d.label,
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'loss_analytics_export.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${rows.length} filas exportadas`, 'success');
+}
+
+/* ============================================================
+   12. SAMPLE DATA (demo mode)
+   ============================================================ */
+function generateSampleData() {
+  const samples = [
+    ['CARNE PARA ASAR', 56, 689.68, 1024, 0.0061, 15.2, 13, 3.59, 4.51, 8.10, 0.44],
+    ['COSTILLA PARA ASAR', 56, 489.21, 1746, 0.0105, 18.7, 28, 3, 11.84, 14.84, 0.20],
+    ['PAQ MINI DONAS RELL', 12, 307.5, 82, 0.0005, 32.7, 21, 5, 1, 6, 0.83],
+    ['PASTEL CAJETA', 12, 234.3, 1632, 0.0098, 28, 20, 1, 6, 7, 0.14],
+    ['BOLILLO', 12, 221.1, 27753, 0.166, 0, 0, 201, 13169, 13370, 0.015],
+    ['DESHEBRADA DE POLLO', 56, 216, 89, 0.0005, 0, 0, 4, 1, 5, 0.80],
+    ['MILANESA DE RES', 56, 207.82, 992, 0.0059, 9.3, 3, 1, 5.18, 6.18, 0.16],
+    ['PAQ DONAS 4 PZ', 12, 197.6, 863, 0.0052, 0, 0, 10, 31, 41, 0.24],
+    ['LECHE MARQUETA 1L', 81, 412.5, 5230, 0.031, 4.2, 80, 12, 50, 62, 0.19],
+    ['YOGURT NATURAL 1KG', 81, 188.0, 3120, 0.018, 21, 65, 8, 25, 33, 0.24],
+    ['QUESO OAXACA 500G', 81, 925.0, 4100, 0.024, 8.5, 75, 14, 30, 44, 0.32],
+    ['PAPA BLANCA ALFA', 24, 142.0, 1850, 0.011, 12, 45, 6, 18, 24, 0.25],
+    ['TOMATE SALADETTE', 24, 380.0, 2240, 0.013, 6, 35, 9, 22, 31, 0.29],
+    ['AGUACATE HASS', 24, 510.0, 1980, 0.012, 4, 28, 7, 15, 22, 0.32],
+    ['PLATANO MACHO', 24, 95.0, 1450, 0.0087, 9, 22, 4, 10, 14, 0.29],
+    ['REFRESCO COLA 2L', 71, 78.0, 8900, 0.053, 14, 120, 3, 40, 43, 0.07],
+    ['AGUA MINERAL 1L', 71, 45.0, 4200, 0.025, 18, 95, 2, 18, 20, 0.10],
+    ['JUGO NARANJA 1L', 71, 156.0, 2100, 0.013, 7, 42, 5, 12, 17, 0.29],
+    ['CEBOLLA BLANCA', 24, 88.0, 1640, 0.0098, 11, 30, 4, 9, 13, 0.31],
+    ['CHILE POBLANO', 24, 64.0, 920, 0.0055, 8, 18, 3, 6, 9, 0.33],
+    ['POLLO ENTERO FRESCO', 56, 1240.0, 8600, 0.052, 3.5, 25, 22, 60, 82, 0.27],
+    ['SALMON FRESCO 1KG', 56, 1850.0, 3200, 0.019, 2.1, 12, 6, 9, 15, 0.40],
+    ['CAMARON PACIFICO 1KG', 56, 920.0, 1800, 0.011, 5, 38, 4, 7, 11, 0.36],
+    ['PAN BIMBO GRANDE', 12, 67.5, 5400, 0.032, 0, 0, 3, 28, 31, 0.10],
+    ['CONCHA VANILLA', 12, 89.0, 1280, 0.0077, 0, 0, 4, 7, 11, 0.36],
+    ['MANGO ATAULFO', 24, 215.0, 1340, 0.0080, 5, 25, 6, 11, 17, 0.35],
+    ['FRESAS 1KG', 24, 425.0, 1980, 0.012, 3, 12, 8, 14, 22, 0.36],
+    ['SANDIA PZA', 24, 180.0, 2450, 0.0147, 6, 30, 2, 8, 10, 0.20],
+    ['MELON CANTALOUPE', 24, 95.0, 1180, 0.0071, 7, 22, 2, 6, 8, 0.25],
+    ['CREMA LALA 1L', 81, 132.0, 2890, 0.017, 9, 48, 4, 14, 18, 0.22],
+    ['MANTEQUILLA 200G', 81, 76.0, 1670, 0.010, 22, 88, 2, 8, 10, 0.20],
+    ['JAMON DE PAVO 500G', 56, 215.0, 3450, 0.021, 6, 32, 5, 14, 19, 0.26],
+    ['TOCINO AHUMADO 250G', 56, 178.0, 2180, 0.013, 7, 28, 4, 9, 13, 0.31],
+    ['SALCHICHA VIENA 1KG', 56, 92.0, 1980, 0.012, 11, 45, 3, 10, 13, 0.23],
+    ['HUEVO BLANCO 30PZ', 71, 145.0, 4250, 0.026, 8, 55, 4, 18, 22, 0.18],
+  ];
+  return samples.map(s => ({
+    desc: s[0],
+    category: inferCategory(s[0]),
+    dept: inferCategory(s[0]),
+    loss: s[2], sales: s[3], partVta: s[4], ddv: s[5], oh: s[6],
+    pzaTd: s[7], pzaVta: s[8], pzaProd: s[9], pzaPctTd: s[10],
+    pctTd: s[3] > 0 ? s[2] / s[3] : 0,
+  }));
+}
+
+function loadSampleData() {
+  const rows = generateSampleData();
+  STATE.rawRows = rows;
+  populateDeptFilter();
+  applyFilters();
+
+  const status = document.getElementById('dataset-status');
+  status.innerHTML = `<span class="h-2 w-2 rounded-full bg-warn-bright"></span><span class="text-xs text-ink-100">${rows.length} artículos (demo)</span>`;
+  const meta = document.getElementById('dataset-meta');
+  meta.classList.remove('hidden');
+  const totalLoss = rows.reduce((s,r)=>s+r.loss,0);
+  meta.textContent = `Demo · ${money(totalLoss)} en merma`;
+
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('skeleton-state').classList.add('hidden');
+  switchModule('dashboard');
+  toast('Datos demo cargados — explora los 3 módulos', 'info');
+}
+
+/* ============================================================
+   13. EVENT BINDINGS
+   ============================================================ */
+function bindEvents() {
+  // File input
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  // Sample loaders
+  document.getElementById('load-sample').addEventListener('click', loadSampleData);
+  document.getElementById('load-sample-2').addEventListener('click', loadSampleData);
+
+  // Drag & drop
+  const dropZone = document.querySelector('.drop-zone');
+  if (dropZone) {
+    ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragging');
+    }));
+    ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('dragging');
+    }));
+    dropZone.addEventListener('drop', e => {
+      const f = e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+  }
+
+  // Sidebar toggle
+  document.getElementById('toggle-sidebar').addEventListener('click', () => {
+    const sb = document.getElementById('sidebar');
+    sb.classList.toggle('sidebar-collapsed');
+    const collapsed = sb.classList.contains('sidebar-collapsed');
+    sb.style.width = collapsed ? '72px' : '288px';
+    const icon = document.getElementById('sidebar-icon');
+    icon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
+    lucide.createIcons();
+  });
+
+  // Nav
+  document.querySelectorAll('[data-module]').forEach(btn => {
+    btn.addEventListener('click', () => switchModule(btn.dataset.module));
+  });
+
+  // Global search
+  document.getElementById('global-search').addEventListener('input', e => {
+    STATE.searchTerm = e.target.value.trim();
+    STATE.page = 1;
+    applyFilters();
+    if (STATE.activeModule === 'dashboard') renderDashboard();
+    if (STATE.activeModule === 'analysis')  renderTable();
+    if (STATE.activeModule === 'actions')   renderActionTable();
+  });
+
+  // Dept filter
+  document.getElementById('dept-filter').addEventListener('change', e => {
+    STATE.deptFilter = e.target.value;
+    STATE.page = 1;
+    applyFilters();
+    if (STATE.activeModule === 'dashboard') renderDashboard();
+    if (STATE.activeModule === 'analysis')  renderTable();
+    if (STATE.activeModule === 'actions')   renderActionTable();
+  });
+
+  // Table search
+  document.getElementById('table-search').addEventListener('input', e => {
+    STATE.tableSearch = e.target.value.trim();
+    STATE.page = 1;
+    applyFilters();
+    renderTable();
+  });
+
+  // Sort headers
+  document.querySelectorAll('.data-table thead th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const sort = th.dataset.sort;
+      if (STATE.sortBy === sort) {
+        STATE.sortDir = STATE.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        STATE.sortBy = sort; STATE.sortDir = 'desc';
+      }
+      applyFilters();
+      renderTable();
+    });
+  });
+
+  // Pagination
+  document.getElementById('page-prev').addEventListener('click', () => {
+    if (STATE.page > 1) { STATE.page--; renderTable(); }
+  });
+  document.getElementById('page-next').addEventListener('click', () => {
+    const totalPages = Math.ceil(STATE.filteredRows.length / STATE.pageSize);
+    if (STATE.page < totalPages) { STATE.page++; renderTable(); }
+  });
+  document.getElementById('page-size').addEventListener('change', e => {
+    STATE.pageSize = parseInt(e.target.value);
+    STATE.page = 1;
+    renderTable();
+  });
+
+  // Export CSV
+  document.getElementById('export-csv').addEventListener('click', exportCSV);
+
+  // Action filter
+  document.getElementById('action-filter').addEventListener('change', e => {
+    STATE.actionFilter = e.target.value;
+    renderActionTable();
+  });
+
+  // Reset progress
+  document.getElementById('reset-progress').addEventListener('click', () => {
+    if (confirm('¿Borrar todo el progreso de acciones guardado en este navegador?')) {
+      localStorage.removeItem(LS_KEY);
+      renderActionTable();
+      toast('Progreso reiniciado', 'info');
+    }
+  });
+
+  // Expand rows (event delegation)
+  document.getElementById('action-table-body').addEventListener('click', e => {
+    const btn = e.target.closest('.expand-btn');
+    if (btn) {
+      const idx = parseInt(btn.dataset.idx);
+      if (STATE.expandedRows.has(idx)) STATE.expandedRows.delete(idx);
+      else STATE.expandedRows.add(idx);
+      renderActionTable();
+      return;
+    }
+    // Checkbox toggle
+    const cb = e.target.closest('.action-checkbox');
+    if (cb) {
+      const art = cb.dataset.art;
+      const i = parseInt(cb.dataset.idx);
+      const progress = loadProgress();
+      if (!progress[art]) progress[art] = {};
+      progress[art][i] = cb.checked;
+      saveProgress(progress);
+      // Re-render to update progress bar & icon
+      setTimeout(() => renderActionTable(), 50);
+    }
+  });
+
+  // Keyboard shortcut: Cmd/Ctrl + K focus search
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('global-search').focus();
+    }
+  });
+}
+
+/* ============================================================
+   14. INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  bindEvents();
+});
+</script>
+</body>
+</html>
